@@ -42,9 +42,9 @@ class DataProcessor:
 
         dict_for_training = {
             'train_outcome': self.prepare_for_outcome_prediction(train_df),
-            'val_outcome': self.prepare_for_outcome_prediction(val_df),
+            'val_or_test_outcome': self.prepare_for_outcome_prediction(val_df),
             'train_reward': self.prepare_for_reward_prediction(self.augment_train_for_reward(train_df)),
-            'val_reward': self.prepare_for_reward_prediction(val_df),
+            'val_or_test_reward': self.prepare_for_reward_prediction(val_df),
             'val_set': val_df[self.columns_to_display].copy(),
             'unscaled_val_set': val_df[self.columns_to_display].copy(),
             'scaler': self.scaler,
@@ -97,6 +97,7 @@ class DataProcessor:
         y_bank = df['Bank_reward']
         y_applicant = df['Applicant_reward']
         y_regulatory = df['Regulatory_reward']
+        
         return X, y_bank, y_applicant, y_regulatory
     
     def process(self):

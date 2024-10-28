@@ -1,29 +1,14 @@
-from get_ranking_criteria import create_ranking_criteria
 from get_rewards import RewardCalculator
 import pandas as pd
 from prepare_data import DataProcessor
-
-
-actor_list = ['Bank', 'Applicant', 'Regulatory', 'Oracle', 'Classifier']
-actions_set = ['Grant', 'Not Grant', 'Grant lower']
-decision_criteria_list = ['Maximin', 'Nash Social Welfare', 'Kalai-Smorodinsky', 'Nash Bargaining', 'Compromise Programming', 'Proportional Fairness']
-feature_columns = ['Income', 'Credit Score', 'Loan Amount', 'Interest Rate']
-columns_to_display = ['Income', 'Credit Score', 'Loan Amount', 'Interest Rate', 'Applicant Type', 'Recoveries']
-ranking_criteria, metrics_for_evaluation, ranking_weights = create_ranking_criteria()
-
-
-param_grid_outcome = {
-    'n_estimators': [100,200, 300],
-    'max_depth': [None,10, 20],
-}
-
-param_grid_reward = {
-    'n_estimators': [50,100, 150],
-    'max_depth': [None,10,20],
-}
+from config import (
+    actor_list, actions_set, decision_criteria_list,
+    feature_columns, columns_to_display, ranking_criteria,
+    metrics_for_evaluation, ranking_weights, param_grid_outcome, param_grid_reward
+)
+from get_cv_results import CrossValidator
 
 df = pd.read_csv('data/lending_club_data.csv')
-df.shape
 
 reward_calculator = RewardCalculator()
 df_ready = reward_calculator.compute_rewards(df)
@@ -47,3 +32,24 @@ process_train_val_folds, all_train_set, test_set = data_processor.process()
 
 print("Train set shape:", all_train_set.shape)
 print("Test set shape:", test_set.shape)
+
+
+cross_validator = CrossValidator(
+    param_grid_outcome=param_grid_outcome,
+    param_grid_reward=param_grid_reward,
+    n_splits=2,
+    process_train_val_folds=process_train_val_folds,
+    actions_set=actions_set,
+    actor_list=actor_list,
+    decision_criteria_list=decision_criteria_list,
+    ranking_criteria=ranking_criteria,
+    ranking_weights=ranking_weights,
+    metrics_for_evaluation=metrics_for_evaluation
+)
+
+# Run cross-validation with hyperparameter tuning
+results = cross_validator.run()
+
+print("Best outcome parameters per fold:", results['best_hyperparams_outcome_per_fold'])
+print("Suggested outcome parameters:", results['suggested_params_outcome'])
+print("Suggested reward parameters:", results['suggested_params_reward'])
