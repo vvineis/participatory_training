@@ -2,6 +2,8 @@ from get_ranking_criteria import create_ranking_criteria
 
 # Actor and Action Lists
 actor_list = ['Bank', 'Applicant', 'Regulatory', 'Oracle', 'Classifier']
+reward_types=['Bank', 'Applicant', 'Regulatory']
+
 actions_set = ['Grant', 'Not Grant', 'Grant lower']
 
 # Decision Criteria List

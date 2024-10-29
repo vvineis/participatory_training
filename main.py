@@ -2,7 +2,7 @@ from get_rewards import RewardCalculator
 import pandas as pd
 from prepare_data import DataProcessor
 from config import (
-    actor_list, actions_set, decision_criteria_list,
+    actor_list, reward_types, actions_set, decision_criteria_list,
     feature_columns, columns_to_display, ranking_criteria,
     metrics_for_evaluation, ranking_weights, param_grid_outcome, param_grid_reward
 )
@@ -10,7 +10,7 @@ from get_cv_results import CrossValidator
 
 df = pd.read_csv('data/lending_club_data.csv')
 
-reward_calculator = RewardCalculator()
+reward_calculator = RewardCalculator(reward_types)
 df_ready = reward_calculator.compute_rewards(df)
 
 # Define categorical columns for processing
@@ -22,8 +22,9 @@ data_processor = DataProcessor(
     feature_columns=feature_columns,
     columns_to_display=columns_to_display,
     categorical_columns=categorical_columns,
+    reward_types=reward_types,
     test_size=0.2,
-    n_splits=5,
+    n_splits=3,
     random_split=True
 )
     
@@ -37,7 +38,7 @@ print("Test set shape:", test_set.shape)
 cross_validator = CrossValidator(
     param_grid_outcome=param_grid_outcome,
     param_grid_reward=param_grid_reward,
-    n_splits=2,
+    n_splits=3,
     process_train_val_folds=process_train_val_folds,
     actions_set=actions_set,
     actor_list=actor_list,

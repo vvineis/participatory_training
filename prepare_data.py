@@ -4,18 +4,19 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from get_rewards import RewardCalculator
 
 class DataProcessor:
-    def __init__(self, df, feature_columns, columns_to_display, categorical_columns, test_size=0.2, n_splits=5, random_split=True):
+    def __init__(self, df, feature_columns, columns_to_display, categorical_columns, reward_types, test_size=0.2, n_splits=2, random_split=True):
         self.df = df
         self.feature_columns = feature_columns
         self.columns_to_display = columns_to_display
         self.categorical_columns = categorical_columns
         self.test_size = test_size
+        self.reward_types= reward_types
         self.n_splits = n_splits
         self.random_split = random_split
         self.scaler = StandardScaler()
         self.onehot_encoder = OneHotEncoder(sparse_output=False, drop=None, handle_unknown='ignore')
         self._split_data()
-        self.reward_calculator = RewardCalculator()
+        self.reward_calculator = RewardCalculator(self.reward_types)
 
 
     def _split_data(self):
@@ -38,6 +39,7 @@ class DataProcessor:
     def prepare_for_training(self, train_df, val_df):
         # Process train and validation data for outcome and reward prediction
         train_df = self.scale_features(train_df)
+        #print(f"train_df_shape{train_df.shape}")
         val_or_test_df = self.scale_features(val_df, fit=False)
 
         # Prepare outcome prediction data
@@ -46,76 +48,79 @@ class DataProcessor:
 
         # Prepare reward prediction data
         augmented_train_df = self.augment_train_for_reward(train_df)
-        print (f"augmented_df {augmented_train_df.head(1)}")
-
-        X_train_reward, y_train_bank, y_train_applicant, y_train_regulatory = self.prepare_for_reward_prediction(augmented_train_df)
+        
+        X_train_reward, y_train_rewards = self.prepare_for_reward_prediction(augmented_train_df)
         X_train_encoded, X_val_encoded = self.one_hot_encode(X_train_reward, val_or_test_df)
-        X_train_reward = pd.concat([X_train_reward[['Income', 'Credit Score', 'Loan Amount', 'Interest Rate']].reset_index(drop=True), X_train_encoded.reset_index(drop=True)], axis=1)
-        X_val_or_test_reward = pd.concat([val_or_test_df[['Income', 'Credit Score', 'Loan Amount', 'Interest Rate']].reset_index(drop=True), X_val_encoded.reset_index(drop=True)], axis=1)
-        y_val_or_test_bank = val_or_test_df['Bank_reward']
-        y_val_or_test_applicant = val_or_test_df['Applicant_reward']
-        y_val_or_test_regulatory = val_or_test_df['Regulatory_reward']
+        # Combine features and encoded data for train and validation sets
+        X_train_reward_combined = pd.concat(
+            [X_train_reward[self.feature_columns].reset_index(drop=True), X_train_encoded.reset_index(drop=True)], axis=1
+        )
+        X_val_or_test_reward_combined = pd.concat(
+            [val_or_test_df[self.feature_columns].reset_index(drop=True), X_val_encoded.reset_index(drop=True)], axis=1
+        )
 
-        dict_for_training= {'train_outcome': (X_train_outcome, y_train_outcome),
-                    'val_or_test_outcome': (X_val_or_test_outcome, y_val_or_test_outcome),
-                    'train_reward': (X_train_reward, y_train_bank, y_train_applicant, y_train_regulatory),
-                    'val_or_test_reward': (X_val_or_test_reward, y_val_or_test_bank, y_val_or_test_applicant, y_val_or_test_regulatory),
-                    'val_or_test_set': val_or_test_df,
-                    'unscaled_val_or_test_set': val_or_test_df[self.columns_to_display].copy(),
-                    'scaler': self.scaler,
-                    'onehot_encoder': self.onehot_encoder
-                    }
+        # Dynamically retrieve validation rewards
+        y_val_or_test_rewards = {
+            reward_type: val_or_test_df[f'{reward_type}_reward']
+            for reward_type in self.reward_types
+        }
+
+        # Dictionary to store training and validation data for each reward type
+        dict_for_training = {
+            'train_outcome': (X_train_outcome, y_train_outcome),
+            'val_or_test_outcome': (X_val_or_test_outcome, y_val_or_test_outcome),
+            'train_reward': (X_train_reward_combined, *y_train_rewards.values()),
+            'val_or_test_reward': (X_val_or_test_reward_combined, *y_val_or_test_rewards.values()),
+            'val_or_test_set': val_or_test_df,
+            'unscaled_val_or_test_set': val_or_test_df[self.columns_to_display].copy(),
+            'scaler': self.scaler,
+            'onehot_encoder': self.onehot_encoder
+        }
+
         return dict_for_training
 
     def scale_features(self, df, fit=True):
-        # Scale features in the DataFrame
         if fit:
-            df[self.feature_columns] = self.scaler.fit_transform(df[self.feature_columns])
+            df.loc[:, self.feature_columns] = self.scaler.fit_transform(df[self.feature_columns])
         else:
-            df[self.feature_columns] = self.scaler.transform(df[self.feature_columns])
+            df.loc[:, self.feature_columns] = self.scaler.transform(df[self.feature_columns])
         return df
 
     def one_hot_encode(self, train_df, val_df):
-        # One-hot encode categorical columns
         self.onehot_encoder.fit(train_df[self.categorical_columns])
         X_train_encoded = pd.DataFrame(self.onehot_encoder.transform(train_df[self.categorical_columns]), index=train_df.index)
         X_val_encoded = pd.DataFrame(self.onehot_encoder.transform(val_df[self.categorical_columns]), index=val_df.index)
         return X_train_encoded, X_val_encoded
 
     def augment_train_for_reward(self, df):
-        # Augment the training set for reward prediction
         augmented_rows = []
         for _, row in df.iterrows():
             augmented_rows.append(row.copy())
             duplicated_row = row.copy()
             duplicated_row['Action'] = 'Not Grant'
-            bank_reward, applicant_reward, regulatory_reward =self.reward_calculator.get_rewards(
+            rewards = self.reward_calculator.get_rewards(
                 duplicated_row['Action'], duplicated_row['Outcome'],
                 duplicated_row['Applicant Type'], duplicated_row['Loan Amount'], duplicated_row['Interest Rate']
             )
-            duplicated_row['Bank_reward'] = bank_reward
-            duplicated_row['Applicant_reward'] = applicant_reward
-            duplicated_row['Regulatory_reward'] = regulatory_reward
-            augmented_rows.append(duplicated_row)
-            augmented_df=pd.DataFrame(augmented_rows).reset_index(drop=True)
-        return augmented_df
+            for reward_type, reward_value in zip(self.reward_types, rewards):
+                        duplicated_row[f'{reward_type}_reward'] = reward_value
+                        augmented_rows.append(duplicated_row)
+        return pd.DataFrame(augmented_rows).reset_index(drop=True)
 
     def prepare_for_outcome_prediction(self, df):
-        # Prepare data for outcome prediction
         X = df[self.feature_columns]
         y = df['Outcome']
         return X, y
 
     def prepare_for_reward_prediction(self, df):
-        # Prepare data for reward prediction
-        reward_features = ['Income', 'Credit Score', 'Loan Amount', 'Interest Rate', 'Action', 'Outcome']
+        reward_features = self.feature_columns + self.categorical_columns #['Income', 'Credit Score', 'Loan Amount', 'Interest Rate', 'Action', 'Outcome']
         X = df[reward_features]
-        y_bank = df['Bank_reward']
-        y_applicant = df['Applicant_reward']
-        y_regulatory = df['Regulatory_reward']
         
-        return X, y_bank, y_applicant, y_regulatory
+        # Dynamically retrieve reward columns based on self.reward_types
+        y_rewards = {reward_type: df[f'{reward_type}_reward'] for reward_type in self.reward_types}
+        
+        return X, y_rewards
     
     def process(self):
-        # This method returns the train-validation folds generator, the full training set, and test set
         return self.prepare_folds(), self.train_df, self.test_df
+    

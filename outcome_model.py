@@ -7,7 +7,7 @@ def train_outcome_model(X_train, y_train, use_smote=True, **hyperparams):
 
     if use_smote:
         # Apply SMOTE to balance the classes in the training set
-        smote = SMOTE(k_neighbors=2, random_state=42)
+        smote = SMOTE(k_neighbors=1, random_state=42)
         X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)
         #print(f"Before SMOTE: {y_train.value_counts()}")
         #print(f"After SMOTE: {pd.Series(y_train_resampled).value_counts()}")

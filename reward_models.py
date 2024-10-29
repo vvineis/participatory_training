@@ -6,7 +6,6 @@ def train_reward_models(X_train, y_train_bank, y_train_applicant, y_train_regula
                         X_val=None, y_val_bank=None, y_val_applicant=None, y_val_regulatory=None,
                         **hyperparams):
     
-    print(X_train.head())
     """
     Train the reward models (bank, applicant, regulatory) with specified hyperparameters.
     If no hyperparameters are provided, default values are used.

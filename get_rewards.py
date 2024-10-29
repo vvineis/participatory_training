@@ -76,41 +76,52 @@ class RewardCalculator:
         }
     }
 
-    def __init__(self, noise_level=0.05):
+    def __init__(self, reward_types, noise_level=0.05):
         self.noise_level = noise_level
+        self.reward_types= reward_types
 
     def get_rewards(self, action, outcome, applicant_type, loan_amount, interest_rate):
         # Retrieve reward structure based on applicant type
         reward_structure = self.REWARD_STRUCTURES[applicant_type]
         
-        # Base rewards from reward structure
-        bank_reward = reward_structure['Bank'][(action, outcome)]
-        applicant_reward = reward_structure['Applicant'][(action, outcome)]
-        regulatory_reward = reward_structure['Regulatory'][(action, outcome)]
+        # Dynamically retrieve base rewards from the reward structure
+        rewards = {
+            reward_type: reward_structure[reward_type][(action, outcome)]
+            for reward_type in self.reward_types
+        }
         
-        # Apply adjustments based on loan and interest rate
-        bank_reward, applicant_reward, regulatory_reward = self.adjust_rewards(
-            bank_reward, applicant_reward, regulatory_reward, loan_amount, interest_rate
-        )
+        # Apply adjustments based on loan amount and interest rate
+        adjusted_rewards = self.adjust_rewards(rewards, loan_amount, interest_rate)
         
-        return bank_reward, applicant_reward, regulatory_reward
+        # Return rewards as a list in the same order as self.reward_types
+        return [adjusted_rewards[reward_type] for reward_type in self.reward_types]
 
-    def adjust_rewards(self, bank_reward, applicant_reward, regulatory_reward, loan_amount, interest_rate):
+
+    def adjust_rewards(self, rewards, loan_amount, interest_rate):
+        # Factors based on loan amount and interest rate
         loan_amount_factor = np.clip(loan_amount / 10000, 0.5, 1.5)
         interest_rate_factor = np.clip(interest_rate, 0.05, 0.25)
-        
-        # Adjust based on loan amount and interest rate
-        bank_reward *= loan_amount_factor * (1 + interest_rate_factor)
-        applicant_reward *= (2 - interest_rate_factor) * (1 - loan_amount_factor)
-        regulatory_reward *= (1 - interest_rate_factor) * loan_amount_factor
-        
-        # Apply noise
-        bank_reward += np.random.uniform(-self.noise_level, self.noise_level)
-        applicant_reward += np.random.uniform(-self.noise_level, self.noise_level)
-        regulatory_reward += np.random.uniform(-self.noise_level, self.noise_level)
-        
-        # Clip rewards to [0, 1]
-        return np.clip(bank_reward, 0, 1), np.clip(applicant_reward, 0, 1), np.clip(regulatory_reward, 0, 1)
+
+        # Adjust each reward type dynamically
+        adjusted_rewards = {}
+        for reward_type, reward_value in rewards.items():
+            # Custom adjustments for each reward type (if needed)
+            if reward_type == 'Bank':
+                adjusted_reward = reward_value * loan_amount_factor * (1 + interest_rate_factor)
+            elif reward_type == 'Applicant':
+                adjusted_reward = reward_value * (2 - interest_rate_factor) * (1 - loan_amount_factor)
+            elif reward_type == 'Regulatory':
+                adjusted_reward = reward_value * (1 - interest_rate_factor) * loan_amount_factor
+            else:
+                # General adjustment for any additional reward types
+                adjusted_reward = reward_value * loan_amount_factor * (1 + interest_rate_factor / 2)
+
+            # Apply noise and clip
+            adjusted_reward += np.random.uniform(-self.noise_level, self.noise_level)
+            adjusted_rewards[reward_type] = np.clip(adjusted_reward, 0, 1)
+
+        return adjusted_rewards
+
 
     def compute_rewards(self, df):
         # Apply get_rewards across DataFrame with lambda for vectorization
