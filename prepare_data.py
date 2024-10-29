@@ -38,18 +38,33 @@ class DataProcessor:
     def prepare_for_training(self, train_df, val_df):
         # Process train and validation data for outcome and reward prediction
         train_df = self.scale_features(train_df)
-        val_df = self.scale_features(val_df, fit=False)
+        val_or_test_df = self.scale_features(val_df, fit=False)
 
-        dict_for_training = {
-            'train_outcome': self.prepare_for_outcome_prediction(train_df),
-            'val_or_test_outcome': self.prepare_for_outcome_prediction(val_df),
-            'train_reward': self.prepare_for_reward_prediction(self.augment_train_for_reward(train_df)),
-            'val_or_test_reward': self.prepare_for_reward_prediction(val_df),
-            'val_set': val_df[self.columns_to_display].copy(),
-            'unscaled_val_set': val_df[self.columns_to_display].copy(),
-            'scaler': self.scaler,
-            'onehot_encoder': self.onehot_encoder
-        }
+        # Prepare outcome prediction data
+        X_train_outcome, y_train_outcome = self.prepare_for_outcome_prediction(train_df)
+        X_val_or_test_outcome, y_val_or_test_outcome = val_or_test_df[self.feature_columns], val_or_test_df['Outcome']
+
+        # Prepare reward prediction data
+        augmented_train_df = self.augment_train_for_reward(train_df)
+        print (f"augmented_df {augmented_train_df.head(1)}")
+
+        X_train_reward, y_train_bank, y_train_applicant, y_train_regulatory = self.prepare_for_reward_prediction(augmented_train_df)
+        X_train_encoded, X_val_encoded = self.one_hot_encode(X_train_reward, val_or_test_df)
+        X_train_reward = pd.concat([X_train_reward[['Income', 'Credit Score', 'Loan Amount', 'Interest Rate']].reset_index(drop=True), X_train_encoded.reset_index(drop=True)], axis=1)
+        X_val_or_test_reward = pd.concat([val_or_test_df[['Income', 'Credit Score', 'Loan Amount', 'Interest Rate']].reset_index(drop=True), X_val_encoded.reset_index(drop=True)], axis=1)
+        y_val_or_test_bank = val_or_test_df['Bank_reward']
+        y_val_or_test_applicant = val_or_test_df['Applicant_reward']
+        y_val_or_test_regulatory = val_or_test_df['Regulatory_reward']
+
+        dict_for_training= {'train_outcome': (X_train_outcome, y_train_outcome),
+                    'val_or_test_outcome': (X_val_or_test_outcome, y_val_or_test_outcome),
+                    'train_reward': (X_train_reward, y_train_bank, y_train_applicant, y_train_regulatory),
+                    'val_or_test_reward': (X_val_or_test_reward, y_val_or_test_bank, y_val_or_test_applicant, y_val_or_test_regulatory),
+                    'val_or_test_set': val_or_test_df,
+                    'unscaled_val_or_test_set': val_or_test_df[self.columns_to_display].copy(),
+                    'scaler': self.scaler,
+                    'onehot_encoder': self.onehot_encoder
+                    }
         return dict_for_training
 
     def scale_features(self, df, fit=True):
@@ -82,7 +97,8 @@ class DataProcessor:
             duplicated_row['Applicant_reward'] = applicant_reward
             duplicated_row['Regulatory_reward'] = regulatory_reward
             augmented_rows.append(duplicated_row)
-        return pd.DataFrame(augmented_rows).reset_index(drop=True)
+            augmented_df=pd.DataFrame(augmented_rows).reset_index(drop=True)
+        return augmented_df
 
     def prepare_for_outcome_prediction(self, df):
         # Prepare data for outcome prediction
