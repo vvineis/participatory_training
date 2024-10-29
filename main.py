@@ -4,7 +4,7 @@ from prepare_data import DataProcessor
 from config import (
     actor_list, reward_types, actions_set, decision_criteria_list,
     feature_columns, columns_to_display, ranking_criteria,
-    metrics_for_evaluation, ranking_weights, param_grid_outcome, param_grid_reward
+    metrics_for_evaluation, ranking_weights, classifier, regressor, param_grid_outcome, param_grid_reward
 )
 from get_cv_results import CrossValidator
 
@@ -36,6 +36,8 @@ print("Test set shape:", test_set.shape)
 
 
 cross_validator = CrossValidator(
+    classifier=classifier,
+    regressor= regressor,
     param_grid_outcome=param_grid_outcome,
     param_grid_reward=param_grid_reward,
     n_splits=3,

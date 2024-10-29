@@ -1,9 +1,8 @@
 from imblearn.over_sampling import SMOTE
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 import pandas as pd
 
-def train_outcome_model(X_train, y_train, use_smote=True, **hyperparams):
+def train_outcome_model(X_train, y_train, classifier, use_smote=True, **hyperparams):
 
     if use_smote:
         # Apply SMOTE to balance the classes in the training set
@@ -15,10 +14,10 @@ def train_outcome_model(X_train, y_train, use_smote=True, **hyperparams):
         X_train_resampled, y_train_resampled = X_train, y_train
 
     # Train the classifier with the (resampled) training set
-    clf = RandomForestClassifier(**hyperparams)
-    clf.fit(X_train_resampled, y_train_resampled)
+    classifier.set_params(**hyperparams)
+    classifier.fit(X_train_resampled, y_train_resampled)
 
-    return clf
+    return classifier
 
 def evaluate_outcome_model(clf, X_val, y_val):
     y_pred_val = clf.predict(X_val)

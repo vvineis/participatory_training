@@ -1,10 +1,12 @@
 
-from sklearn.ensemble import RandomForestRegressor
+
 from sklearn.metrics import mean_squared_error
 
-def train_reward_models(X_train, y_train_bank, y_train_applicant, y_train_regulatory,
+def train_reward_models(X_train, y_train_bank, y_train_applicant, y_train_regulatory, regressor,
                         X_val=None, y_val_bank=None, y_val_applicant=None, y_val_regulatory=None,
                         **hyperparams):
+    
+    print(f"Type of regressor: {type(regressor)}")
     
     """
     Train the reward models (bank, applicant, regulatory) with specified hyperparameters.
@@ -16,9 +18,9 @@ def train_reward_models(X_train, y_train_bank, y_train_applicant, y_train_regula
         X_val.columns = X_val.columns.astype(str)
 
     # Initialize models with the provided hyperparameters
-    bank_regressor = RandomForestRegressor(**hyperparams)
-    applicant_regressor = RandomForestRegressor(**hyperparams)
-    regulatory_regressor = RandomForestRegressor(**hyperparams)
+    bank_regressor = regressor(**hyperparams)
+    applicant_regressor = regressor(**hyperparams)
+    regulatory_regressor = regressor(**hyperparams)
 
     # Fit models
     bank_regressor.fit(X_train, y_train_bank)

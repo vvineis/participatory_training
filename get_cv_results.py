@@ -4,9 +4,11 @@ from reward_models import *
 from outcome_model import *
 
 class CrossValidator:
-    def __init__(self, param_grid_outcome, param_grid_reward, n_splits, 
+    def __init__(self,classifier, regressor, param_grid_outcome, param_grid_reward, n_splits, 
                  process_train_val_folds, actions_set, actor_list, 
                  decision_criteria_list, ranking_criteria, ranking_weights, metrics_for_evaluation):
+        self.classifier = classifier
+        self.regressor=regressor
         self.param_grid_outcome = param_grid_outcome
         self.param_grid_reward = param_grid_reward
         self.n_splits = n_splits
@@ -30,7 +32,7 @@ class CrossValidator:
         best_params, best_model, best_score = None, None, -float('inf')
         for params in ParameterGrid(self.param_grid_outcome):
             print(f"Trying parameters for outcome model: {params}")
-            model = train_outcome_model(X_train, y_train, **params)
+            model = train_outcome_model(X_train, y_train, self.classifier, **params)
             score = evaluate_outcome_model(model, X_val, y_val)
             if score > best_score:
                 best_score, best_params, best_model = score, params, model
@@ -41,7 +43,7 @@ class CrossValidator:
         best_params, best_models, best_score = None, None, float('inf')
         for params in ParameterGrid(self.param_grid_reward):
             print(f"Trying parameters for rewards model: {params}")
-            models = train_reward_models(X_train, y_train_bank, y_train_applicant, y_train_regulatory, **params)
+            models = train_reward_models(X_train, y_train_bank, y_train_applicant, y_train_regulatory,regressor=self.regressor, **params)
             mse_bank, mse_applicant, mse_regulatory = evaluate_reward_models(
                 models[0], models[1], models[2], X_val, y_val_bank, y_val_applicant, y_val_regulatory
             )
@@ -77,7 +79,7 @@ class CrossValidator:
             self.best_reward_models_per_fold.append(best_model_reward)
             self.fold_scores_reward.append(best_score_reward)
 
-            if fold==1:
+            if fold==0:
                 break
             else:
                 continue

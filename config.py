@@ -1,4 +1,6 @@
 from get_ranking_criteria import create_ranking_criteria
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+
 
 # Actor and Action Lists
 actor_list = ['Bank', 'Applicant', 'Regulatory', 'Oracle', 'Classifier']
@@ -19,6 +21,9 @@ columns_to_display = ['Income', 'Credit Score', 'Loan Amount', 'Interest Rate', 
 # Ranking Criteria, Metrics for Evaluation, and Ranking Weights
 ranking_criteria, metrics_for_evaluation, ranking_weights = create_ranking_criteria()
 
+classifier= RandomForestClassifier()
+regressor= RandomForestRegressor
+
 # Parameter Grids for Hyperparameter Tuning
 param_grid_outcome = {
     'n_estimators': [100, 200, 300],
@@ -29,5 +34,3 @@ param_grid_reward = {
     'n_estimators': [50, 100, 150],
     'max_depth': [None, 10, 20],
 }
-
-print(ranking_criteria)
