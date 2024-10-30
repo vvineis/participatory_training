@@ -48,9 +48,11 @@ class DataProcessor:
 
         # Prepare reward prediction data
         augmented_train_df = self.augment_train_for_reward(train_df)
-        
+
         X_train_reward, y_train_rewards = self.prepare_for_reward_prediction(augmented_train_df)
+
         X_train_encoded, X_val_encoded = self.one_hot_encode(X_train_reward, val_or_test_df)
+
         # Combine features and encoded data for train and validation sets
         X_train_reward_combined = pd.concat(
             [X_train_reward[self.feature_columns].reset_index(drop=True), X_train_encoded.reset_index(drop=True)], axis=1
@@ -58,7 +60,7 @@ class DataProcessor:
         X_val_or_test_reward_combined = pd.concat(
             [val_or_test_df[self.feature_columns].reset_index(drop=True), X_val_encoded.reset_index(drop=True)], axis=1
         )
-
+        print(f'X_train_reward_combined columns {X_train_reward_combined.columns}')
         # Dynamically retrieve validation rewards
         y_val_or_test_rewards = {
             reward_type: val_or_test_df[f'{reward_type}_reward']
@@ -87,9 +89,20 @@ class DataProcessor:
         return df
 
     def one_hot_encode(self, train_df, val_df):
+        # Fit OneHotEncoder on the training data
         self.onehot_encoder.fit(train_df[self.categorical_columns])
-        X_train_encoded = pd.DataFrame(self.onehot_encoder.transform(train_df[self.categorical_columns]), index=train_df.index)
-        X_val_encoded = pd.DataFrame(self.onehot_encoder.transform(val_df[self.categorical_columns]), index=val_df.index)
+
+        # Transform the train and validation sets
+        X_train_encoded = self.onehot_encoder.transform(train_df[self.categorical_columns])
+        X_val_encoded = self.onehot_encoder.transform(val_df[self.categorical_columns])
+
+        # Retrieve descriptive column names from the encoder
+        encoded_feature_names = self.onehot_encoder.get_feature_names_out(self.categorical_columns)
+
+        # Convert encoded arrays to DataFrames with descriptive column names
+        X_train_encoded = pd.DataFrame(X_train_encoded, columns=encoded_feature_names, index=train_df.index)
+        X_val_encoded = pd.DataFrame(X_val_encoded, columns=encoded_feature_names, index=val_df.index)
+
         return X_train_encoded, X_val_encoded
 
     def augment_train_for_reward(self, df):

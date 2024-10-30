@@ -92,9 +92,7 @@ class SuggestAction:
         self.expected_rewards = expected_rewards
         # Precompute values used across strategies
         self.disagreement_point = {actor: min(rewards.values()) for actor, rewards in expected_rewards.items()}
-        print(f'disagreement point {self.disagreement_point}')
         self.ideal_point = {actor: max(rewards.values()) for actor, rewards in expected_rewards.items()}
-        print(f'ideal point {self.ideal_point}')
         self.all_actions = set(action for rewards in expected_rewards.values() for action in rewards)
         
         # Register available strategies

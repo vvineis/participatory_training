@@ -83,13 +83,13 @@ class DecisionProcessor:
             # Compute decision-making solutions based on expected rewards and disagreement points
             suggestion = SuggestAction(expected_rewards)
             decision_solutions = suggestion.compute_all_solutions()
-            for strategy, outcome in decision_solutions.items():
-                print(f"{strategy}:")
-                if strategy == 'Max Individual Reward':
-                    for actor, info in outcome.items():
-                        print(f"  {actor}: Best action is {info['action']} with reward {info['value']}")
-                else:
-                    print(f"  Best action is {outcome['action']} with value {outcome['value']}")
+           # for strategy, outcome in decision_solutions.items():
+            #    print(f"{strategy}:")
+            #    if strategy == 'Max Individual Reward':
+                #    for actor, info in outcome.items():
+            #            print(f"  {actor}: Best action is {info['action']} with reward {info['value']}")
+            #    else:
+            #        print(f"  Best action is {outcome['action']} with value {outcome['value']}")
 
             all_expected_rewards.append(expected_rewards)
             #all_decision_solutions.append(decision_solutions)
