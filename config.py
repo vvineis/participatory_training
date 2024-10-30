@@ -1,4 +1,4 @@
-from get_ranking_criteria import create_ranking_criteria
+from a2_get_ranking_criteria import create_ranking_criteria
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
 

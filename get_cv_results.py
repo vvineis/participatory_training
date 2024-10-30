@@ -1,11 +1,12 @@
 import numpy as np
 from sklearn.model_selection import ParameterGrid
-from reward_models import *
-from outcome_model import *
+from b2_reward_models import RewardModels
+from b1_outcome_model import OutcomeModel
+from c_get_decisions import DecisionProcessor
 
 class CrossValidator:
     def __init__(self,classifier, regressor, param_grid_outcome, param_grid_reward, n_splits, 
-                 process_train_val_folds, actions_set, actor_list, 
+                 process_train_val_folds, feature_columns, categorical_columns, actions_set, actor_list, 
                  decision_criteria_list, ranking_criteria, ranking_weights, metrics_for_evaluation):
         self.classifier = classifier
         self.regressor=regressor
@@ -13,6 +14,8 @@ class CrossValidator:
         self.param_grid_reward = param_grid_reward
         self.n_splits = n_splits
         self.process_train_val_folds = process_train_val_folds
+        self.feature_columns= feature_columns
+        self.categorical_columns= categorical_columns
         self.actions_set = actions_set
         self.actor_list = actor_list
         self.decision_criteria_list = decision_criteria_list
@@ -31,9 +34,10 @@ class CrossValidator:
     def tune_outcome_model(self, X_train, y_train, X_val, y_val):
         best_params, best_model, best_score = None, None, -float('inf')
         for params in ParameterGrid(self.param_grid_outcome):
+            self.outcome_model = OutcomeModel(self.classifier)
             print(f"Trying parameters for outcome model: {params}")
-            model = train_outcome_model(X_train, y_train, self.classifier, **params)
-            score = evaluate_outcome_model(model, X_val, y_val)
+            model = self.outcome_model.train(X_train, y_train, **params)
+            score = self.outcome_model.evaluate(X_val, y_val)
             if score > best_score:
                 best_score, best_params, best_model = score, params, model
         return best_params, best_model, best_score
@@ -42,16 +46,24 @@ class CrossValidator:
                            X_val, y_val_bank, y_val_applicant, y_val_regulatory):
         best_params, best_models, best_score = None, None, float('inf')
         for params in ParameterGrid(self.param_grid_reward):
-            print(f"Trying parameters for rewards model: {params}")
-            models = train_reward_models(X_train, y_train_bank, y_train_applicant, y_train_regulatory,regressor=self.regressor, **params)
-            mse_bank, mse_applicant, mse_regulatory = evaluate_reward_models(
-                models[0], models[1], models[2], X_val, y_val_bank, y_val_applicant, y_val_regulatory
+            print(f"Trying parameters for reward model: {params}")
+            
+            # Train reward models using RewardModel's train method
+            self.reward_model = RewardModels(self.regressor, **params)
+            # Train reward models using RewardModel's train method
+            bank_model, applicant_model, regulatory_model = self.reward_model.train(
+                X_train, y_train_bank, y_train_applicant, y_train_regulatory
             )
-            combined_mse = np.mean([mse_bank, mse_applicant, mse_regulatory])
-            if combined_mse < best_score:
-                best_score, best_params, best_models = combined_mse, params, models
-        return best_params, best_models, best_score
+            
+            # Evaluate reward models using RewardModel's evaluate method
+            scores = self.reward_model.evaluate(X_val, y_val_bank, y_val_applicant, y_val_regulatory)
+            avg_mse = (scores['bank_mse'] + scores['applicant_mse'] + scores['regulatory_mse']) / 3
+            
+            if avg_mse < best_score:
+                best_score, best_params, best_models = avg_mse, params, (bank_model, applicant_model, regulatory_model)
 
+        return best_params, best_models, best_score
+    
     def run(self):
         # Execute cross-validation with hyperparameter tuning
         for fold, fold_dict in enumerate(self.process_train_val_folds):
@@ -71,18 +83,36 @@ class CrossValidator:
             self.fold_scores_outcome.append(best_score_outcome)
 
             # Tune reward models
-            best_params_reward, best_model_reward, best_score_reward = self.tune_reward_models(
+            best_params_reward, best_models_reward, best_score_reward = self.tune_reward_models(
                 X_train_reward, y_train_bank, y_train_applicant, y_train_regulatory,
                 X_val_reward, y_val_bank, y_val_applicant, y_val_regulatory
             )
             self.best_hyperparams_reward_per_fold.append(best_params_reward)
-            self.best_reward_models_per_fold.append(best_model_reward)
+            self.best_reward_models_per_fold.append(best_models_reward)
             self.fold_scores_reward.append(best_score_reward)
+
+            # Step 3: Process the validation set using the best outcome and reward models for the fold
+            print("Processing validation set...")
+            decision_processor = DecisionProcessor(
+                    outcome_model=best_model_outcome,
+                    reward_models=best_models_reward,
+                    onehot_encoder= fold_dict['onehot_encoder'],
+                    actions_set=self.actions_set,
+                    feature_columns=self.feature_columns,
+                    categorical_columns=self.categorical_columns,
+                    actor_list=self.actor_list,
+                    decision_criteria_list=self.decision_criteria_list,
+                    ranking_criteria=self.ranking_criteria,
+                    ranking_weights=self.ranking_weights,
+                    metrics_for_evaluation=self.metrics_for_evaluation
+                )
+            decision_processor.get_decisions(X_val_reward)
 
             if fold==0:
                 break
             else:
                 continue
+
 
         # Select the best hyperparameters across folds
         suggested_params_outcome = self.select_best_hyperparameters(self.best_hyperparams_outcome_per_fold, self.fold_scores_outcome, maximize=True)

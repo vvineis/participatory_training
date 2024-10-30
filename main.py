@@ -1,6 +1,6 @@
-from get_rewards import RewardCalculator
+from a1_get_rewards import RewardCalculator
 import pandas as pd
-from prepare_data import DataProcessor
+from b0_prepare_data import DataProcessor
 from config import (
     actor_list, reward_types, actions_set, decision_criteria_list,
     feature_columns, columns_to_display, ranking_criteria,
@@ -42,6 +42,8 @@ cross_validator = CrossValidator(
     param_grid_reward=param_grid_reward,
     n_splits=3,
     process_train_val_folds=process_train_val_folds,
+    feature_columns=feature_columns, 
+    categorical_columns=categorical_columns,
     actions_set=actions_set,
     actor_list=actor_list,
     decision_criteria_list=decision_criteria_list,
