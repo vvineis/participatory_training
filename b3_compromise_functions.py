@@ -97,7 +97,7 @@ class SuggestAction:
         
         # Register available strategies
         self.strategies = {
-                'Max Individual Reward': MaxIndividualReward(),
+                #'Max Individual Reward': MaxIndividualReward(),
                 'Maximin': MaximinCriterion(),
                 'Kalai-Smorodinsky': KalaiSmorodinsky(),
                 'Nash Bargaining': NashBargainingSolution(),
@@ -107,7 +107,7 @@ class SuggestAction:
             }
         print(self.strategies.keys())
 
-    def compute_all_solutions(self):
+    def compute_all_compromise_solutions(self):
         results = {}
         for name, strategy in self.strategies.items():
             action_value = strategy.compute(

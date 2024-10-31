@@ -69,10 +69,11 @@ class DecisionProcessor:
     def get_decisions(self, X_val_or_test_reward):
         expected_rewards_list = []
         all_expected_rewards = []
-        #all_decision_solutions = []
-        #clfr_pred_list = []
+        all_decision_solutions = []
+        clfr_pred_list = []
 
         # Iterate through each row in the validation reward set
+        index=0
         for _, feature_context in X_val_or_test_reward.iterrows():
             feature_context_df = pd.DataFrame([feature_context])
 
@@ -82,18 +83,20 @@ class DecisionProcessor:
 
             # Compute decision-making solutions based on expected rewards and disagreement points
             suggestion = SuggestAction(expected_rewards)
-            decision_solutions = suggestion.compute_all_solutions()
-           # for strategy, outcome in decision_solutions.items():
-            #    print(f"{strategy}:")
-            #    if strategy == 'Max Individual Reward':
-                #    for actor, info in outcome.items():
-            #            print(f"  {actor}: Best action is {info['action']} with reward {info['value']}")
-            #    else:
-            #        print(f"  Best action is {outcome['action']} with value {outcome['value']}")
+            decision_solutions = suggestion.compute_all_compromise_solutions()
+            print(f"Decision solutions for row {index}: {decision_solutions}")
+            print(f'expected reward for row {index}: {expected_rewards} ')
+            print(f'Clfr pred for row {index}: {clfr_pred} ')
+            index+=1
 
             all_expected_rewards.append(expected_rewards)
-            #all_decision_solutions.append(decision_solutions)
-            #clfr_pred_list.extend(clfr_pred)
+            all_decision_solutions.append(decision_solutions)
+            clfr_pred_list.extend(clfr_pred)
+            if index==2:
+                break
+            else:
+                continue
+
 
 
         ''' 
