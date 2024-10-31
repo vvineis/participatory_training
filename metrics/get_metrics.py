@@ -3,12 +3,13 @@ from metrics.fairness_metrics import FairnessMetrics
 from metrics.case_specific_metrics import CaseMetrics
 
 class MetricsCalculator:
-    def __init__(self, fairness_metrics_list, standard_metrics_list, case_metrics_list, actions_set, outcomes_set):
+    def __init__(self, fairness_metrics_list, standard_metrics_list, case_metrics_list, actions_set, outcomes_set, positive_actions_set):
         self.fairness_metrics_list = fairness_metrics_list
         self.standard_metrics_list = standard_metrics_list
         self.case_metrics_list = case_metrics_list
         self.actions_set = actions_set
         self.outcomes_set = outcomes_set
+        self.positive_actions_set=positive_actions_set
 
     @staticmethod
     def _compute_max_min_fairness(value1, value2, value3=None):
@@ -36,7 +37,7 @@ class MetricsCalculator:
             if decision_col not in fairness_cache:
                 fairness_calculator = FairnessMetrics(
                     suggestions_df, decision_col, positive_attribute_for_fairness, positive_group_value, 
-                    true_outcome_col, actions_set=self.actions_set, outcomes_set=self.outcomes_set
+                    true_outcome_col, positive_actions_set=self.positive_actions_set, outcomes_set=self.outcomes_set
                 )
                 fairness_cache[decision_col] = fairness_calculator.get_metrics(self.fairness_metrics_list)
 

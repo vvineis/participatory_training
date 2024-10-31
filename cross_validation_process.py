@@ -12,7 +12,7 @@ from config import fairness_metrics_list, standard_metrics_list, case_metrics_li
 
 class CrossValidator:
     def __init__(self,classifier, regressor, param_grid_outcome, param_grid_reward, n_splits, 
-                 process_train_val_folds, feature_columns, categorical_columns, actions_set, actor_list, 
+                 process_train_val_folds, feature_columns, categorical_columns, actions_set, actor_list, reward_types,
                  decision_criteria_list, ranking_criteria, ranking_weights, metrics_for_evaluation):
         self.classifier = classifier
         self.regressor=regressor
@@ -24,6 +24,7 @@ class CrossValidator:
         self.categorical_columns= categorical_columns
         self.actions_set = actions_set
         self.actor_list = actor_list
+        self.reward_types= reward_types
         self.decision_criteria_list = decision_criteria_list
         self.ranking_criteria = ranking_criteria
         self.ranking_weights = ranking_weights
@@ -113,43 +114,48 @@ class CrossValidator:
                     metrics_for_evaluation=self.metrics_for_evaluation
                 )
             
-            decisions_dfs = decision_processor.get_decisions_dfs(X_val_reward)
-            print(decisions_dfs)
+            all_expected_rewards, all_decisions, all_clsf_pred, decisions_df = decision_processor.get_decisions(X_val_reward)
 
             max_individual_strategy = MaxIndividualReward()
 
             # Instantiate MetricsCalculator and SummaryProcessor with the strategy
-            metrics_calculator = MetricsCalculator(fairness_metrics_list, standard_metrics_list, case_metrics_list, actions_set, outcomes_set)
+            metrics_calculator = MetricsCalculator(fairness_metrics_list, standard_metrics_list, case_metrics_list, actions_set, outcomes_set, positive_actions_set)
             summary_processor = SummaryProcessor(
                 metrics_calculator=metrics_calculator,
                 ranking_criteria=self.ranking_criteria,
                 ranking_weights=self.ranking_weights,
                 metrics_for_evaluation=self.metrics_for_evaluation,
-                actor_list=self.actor_list,
+                reward_types=self.reward_types,
                 decision_criteria_list=self.decision_criteria_list,
                 actions_set=actions_set,
                 outcomes_set=outcomes_set,
                 strategy=max_individual_strategy  
             )
 
-            # Process and retrieve all decision metrics and summary data
             result = summary_processor.process_decision_metrics(
-                suggestions_df=suggestions_df,
-                X_val_reward=X_val_reward,
-                y_val_outcome=y_val_outcome,
-                decision_solutions_df=decision_solutions_df,
-                unscaled_X_val_reward=   unscaled_X_val_reward,
-                expected_rewards_list=expected_rewards_list,
-                clfr_pred_list=clfr_pred_list
+                suggestions_df= decisions_df,             
+                y_val_outcome=y_val_outcome,              
+                decisions_df=decisions_df,                 
+                unscaled_X_val_reward=fold_dict['unscaled_val_or_test_set'], 
+                expected_rewards_list=all_expected_rewards, 
+                clfr_pred_list=all_clsf_pred,
+                positive_actions_set= positive_actions_set        
             )
+               # Access the result components
+            print("Summary DataFrame:")
+            print(result['summary_df'].head(2))
 
-            # Access the result components
-            print(result['summary_df'])
-            print(result['decision_metrics_df'])
-            print(result['ranked_decision_metrics_df'])
+            print("\nDecision Metrics DataFrame:")
+            print(result['decision_metrics_df'].head(2))
+
+            print("\nRanked Decision Metrics DataFrame:")
+            print(result['ranked_decision_metrics_df'].head(2))
+
+            print("\nRank Dictionary:")
             print(result['rank_dict'])
-            print(result['best_criterion'])
 
+            print("\nBest Criterion:")
+            print(result['best_criterion'])
 
 
             if fold==0:

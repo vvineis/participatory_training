@@ -4,7 +4,7 @@ from cross_validation_process import CrossValidator
 import pandas as pd
 
 from config import (
-    actor_list, reward_types, actions_set, decision_criteria_list,
+    actor_list, reward_types, positive_actions_set, actions_set, decision_criteria_list, 
     feature_columns, columns_to_display, ranking_criteria,
     metrics_for_evaluation, ranking_weights, classifier, regressor, param_grid_outcome, param_grid_reward
 )
@@ -48,6 +48,7 @@ cross_validator = CrossValidator(
     categorical_columns=categorical_columns,
     actions_set=actions_set,
     actor_list=actor_list,
+    reward_types=reward_types,
     decision_criteria_list=decision_criteria_list,
     ranking_criteria=ranking_criteria,
     ranking_weights=ranking_weights,

@@ -1,13 +1,16 @@
 import numpy as np
 import pandas as pd
 
+
 class FairnessMetrics:
-    def __init__(self, suggestions_df, decision_col, group_col, positive_group_value, outcome_col='True Outcome'):
+    def __init__(self, suggestions_df, decision_col, group_col, positive_group_value, positive_actions_set, outcomes_set, outcome_col='True Outcome', ):
         self.suggestions_df = suggestions_df
         self.decision_col = decision_col
         self.group_col = group_col
         self.positive_group_value = positive_group_value
         self.outcome_col = outcome_col
+        self.actions_set = positive_actions_set
+        self.outcomes_set = outcomes_set
         self._rates = None 
 
     @property
@@ -21,8 +24,8 @@ class FairnessMetrics:
         negative_group = self.suggestions_df[self.suggestions_df[self.group_col] != self.positive_group_value]
 
         rates = {'positive': {}, 'negative': {}}
-        for decision_value in ['Grant', 'Grant lower']:
-            for outcome_value in ['Fully Repaid', 'Partially Repaid', 'Not Repaid']:
+        for decision_value in self.actions_set:
+            for outcome_value in self.outcomes_set:
                 rates['positive'][(decision_value, outcome_value)] = (
                     (positive_group[self.outcome_col] == outcome_value) & 
                     (positive_group[self.decision_col] == decision_value)
@@ -35,53 +38,53 @@ class FairnessMetrics:
         return rates
 
     def compute_demographic_parity(self):
-        grant_parity = self._calculate_parity('Grant', 'Fully Repaid')
-        grant_lower_parity = self._calculate_parity('Grant lower', 'Partially Repaid')
+        grant_parity = self._calculate_parity(self.actions_set[0], self.outcomes_set[0])
+        grant_lower_parity = self._calculate_parity(self.actions_set[1], self.outcomes_set[1])
         positive_action_parity = grant_parity + grant_lower_parity
 
         return {
-            'Grant Parity': grant_parity,
-            'Grant lower Parity': grant_lower_parity,
+            f'{self.actions_set[0]} Parity': grant_parity,
+            f'{self.actions_set[1]} Parity': grant_lower_parity,
             'Positive Action Parity': positive_action_parity
         }
 
     def compute_equal_opportunity(self):
-        tpr_fully_repaid_parity = self._calculate_parity('Grant', 'Fully Repaid')
-        tpr_partially_repaid_parity = self._calculate_parity('Grant lower', 'Partially Repaid')
+        tpr_fully_repaid_parity = self._calculate_parity(self.actions_set[0], self.outcomes_set[0])
+        tpr_partially_repaid_parity = self._calculate_parity(self.actions_set[1], self.outcomes_set[1])
         
         tpr_positive_outcome_parity = (
             np.nanmean([tpr_fully_repaid_parity, tpr_partially_repaid_parity])
         ) if not any(np.isnan([tpr_fully_repaid_parity, tpr_partially_repaid_parity])) else np.nan
 
         return {
-            'TPR Fully Repaid Parity': tpr_fully_repaid_parity,
-            'TPR Partially Repaid Parity': tpr_partially_repaid_parity,
+            f'TPR {self.outcomes_set[0]} Parity': tpr_fully_repaid_parity,
+            f'TPR {self.outcomes_set[1]} Parity': tpr_partially_repaid_parity,
             'TPR Positive Outcome Parity': tpr_positive_outcome_parity
         }
 
     def compute_equalized_odds(self):
-        fully_repaid_equalized_odds = self._calculate_odds_difference('Grant', 'Fully Repaid', 'Not Repaid')
-        partially_repaid_equalized_odds = self._calculate_odds_difference('Grant lower', 'Partially Repaid', 'Not Repaid')
+        fully_repaid_equalized_odds = self._calculate_odds_difference(self.actions_set[0], self.outcomes_set[0], self.outcomes_set[2])
+        partially_repaid_equalized_odds = self._calculate_odds_difference(self.actions_set[1], self.outcomes_set[1], self.outcomes_set[2])
 
         average_equalized_odds = (
             np.nanmean([fully_repaid_equalized_odds, partially_repaid_equalized_odds])
         ) if not any(np.isnan([fully_repaid_equalized_odds, partially_repaid_equalized_odds])) else np.nan
 
         return {
-            'Equalized Odds Fully Repaid': fully_repaid_equalized_odds,
-            'Equalized Odds Partially Repaid': partially_repaid_equalized_odds,
+            f'Equalized Odds {self.outcomes_set[0]}': fully_repaid_equalized_odds,
+            f'Equalized Odds {self.outcomes_set[1]}': partially_repaid_equalized_odds,
             'Average Equalized Odds': average_equalized_odds
         }
 
     def compute_calibration(self):
-        grant_calibration = self._calculate_parity('Grant', 'Fully Repaid')
-        grant_lower_calibration = self._calculate_parity('Grant lower', 'Partially Repaid')
+        grant_calibration = self._calculate_parity(self.actions_set[0], self.outcomes_set[0])
+        grant_lower_calibration = self._calculate_parity(self.actions_set[1], self.outcomes_set[1])
 
         average_calibration = np.nanmean([grant_calibration, grant_lower_calibration])
 
         return {
-            'Grant Calibration (Fully Repaid)': grant_calibration,
-            'Grant lower Calibration (Partially Repaid)': grant_lower_calibration,
+            f'{self.actions_set[0]} Calibration ({self.outcomes_set[0]})': grant_calibration,
+            f'{self.actions_set[1]} Calibration ({self.outcomes_set[1]})': grant_lower_calibration,
             'Average Calibration': average_calibration
         }
 
@@ -109,3 +112,5 @@ class FairnessMetrics:
                 raise ValueError(f"Metric '{metric}' is not available. Choose from {list(available_metrics.keys())}.")
 
         return selected_metrics
+
+

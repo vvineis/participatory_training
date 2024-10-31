@@ -84,33 +84,19 @@ class DecisionProcessor:
             # Compute decision-making solutions based on expected rewards and disagreement points
             suggestion = SuggestAction(expected_rewards)
             decision_solutions = suggestion.compute_all_compromise_solutions()
-            print(f"Decision solutions for row {index}: {decision_solutions}")
-            print(f'expected reward for row {index}: {expected_rewards} ')
-            print(f'Clfr pred for row {index}: {clfr_pred} ')
-            index+=1
+
 
             self.all_expected_rewards.append(expected_rewards)
             self.all_decision_solutions.append(decision_solutions)
             self.all_clfr_preds.extend(clfr_pred)
+
+            index+=1
             if index==2:
                 break
             else:
                 continue
-
-    def _convert_expected_rewards_to_df(self):
-        rows = []
-        for row_idx, reward_dict in enumerate(self.all_expected_rewards):
-            for action in reward_dict['Bank'].keys():
-                row = {
-                    'Row Index': row_idx,
-                    'Action': action,
-                    'Bank Reward': reward_dict['Bank'][action],
-                    'Applicant Reward': reward_dict['Applicant'][action],
-                    'Regulatory Reward': reward_dict['Regulatory'][action]
-                }
-                rows.append(row)
-        return pd.DataFrame(rows)
-    
+        return  self.all_expected_rewards, self.all_decision_solutions, self.all_clfr_preds, self._convert_decision_solutions_to_df()
+        
     def _convert_decision_solutions_to_df(self):
         rows = []
         for row_idx, decision_dict in enumerate(self.all_decision_solutions):
@@ -124,12 +110,3 @@ class DecisionProcessor:
                 rows.append(row)
         return pd.DataFrame(rows)
     
-    def get_decisions_dfs(self, X_val_or_test_reward):  
-        self.get_decisions(X_val_or_test_reward)
-
-        # Convert expected rewards and decision solutions to DataFrames
-        return {
-            'expected_rewards_df': self._convert_expected_rewards_to_df(),
-            'decision_solutions_df': self._convert_decision_solutions_to_df()
-    }
-
