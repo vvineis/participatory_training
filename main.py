@@ -1,12 +1,14 @@
-from a1_get_rewards import RewardCalculator
+from preprocessing import DataProcessor
+from rewards.get_rewards import RewardCalculator
+from cross_validation_process import CrossValidator
 import pandas as pd
-from b0_prepare_data import DataProcessor
+
 from config import (
     actor_list, reward_types, actions_set, decision_criteria_list,
     feature_columns, columns_to_display, ranking_criteria,
     metrics_for_evaluation, ranking_weights, classifier, regressor, param_grid_outcome, param_grid_reward
 )
-from get_cv_results import CrossValidator
+
 
 df = pd.read_csv('data/lending_club_data.csv')
 

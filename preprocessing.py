@@ -1,7 +1,7 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split, KFold
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from a1_get_rewards import RewardCalculator
+from rewards.get_rewards import RewardCalculator
 
 class DataProcessor:
     def __init__(self, df, feature_columns, columns_to_display, categorical_columns, reward_types, test_size=0.2, n_splits=2, random_split=True):

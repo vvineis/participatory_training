@@ -1,8 +1,8 @@
 import numpy as np
 from sklearn.model_selection import ParameterGrid
-from b2_reward_models import RewardModels
-from b1_outcome_model import OutcomeModel
-from c_get_decisions import DecisionProcessor
+from models.reward_models import RewardModels
+from models.outcome_model import OutcomeModel
+from decisions.get_decisions import DecisionProcessor
 
 class CrossValidator:
     def __init__(self,classifier, regressor, param_grid_outcome, param_grid_reward, n_splits, 
@@ -107,6 +107,8 @@ class CrossValidator:
                     metrics_for_evaluation=self.metrics_for_evaluation
                 )
             decision_processor.get_decisions(X_val_reward)
+            results = decision_processor.process_decisions()
+            print(results)
 
             if fold==0:
                 break

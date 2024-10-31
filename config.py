@@ -1,4 +1,4 @@
-from a2_get_ranking_criteria import create_ranking_criteria
+from ranking_criteria.a2_get_ranking_criteria import create_ranking_criteria
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
 
@@ -7,6 +7,11 @@ actor_list = ['Bank', 'Applicant', 'Regulatory', 'Oracle', 'Classifier']
 reward_types=['Bank', 'Applicant', 'Regulatory']
 
 actions_set = ['Grant', 'Not Grant', 'Grant lower']
+outcomes_set = ['Fully Repaid', 'Partially Repaid', 'Not Repaid']
+
+# Feature Columns and Columns to Display
+feature_columns = ['Income', 'Credit Score', 'Loan Amount', 'Interest Rate']
+columns_to_display = ['Income', 'Credit Score', 'Loan Amount', 'Interest Rate', 'Applicant Type', 'Recoveries']
 
 # Decision Criteria List
 decision_criteria_list = [
@@ -14,13 +19,16 @@ decision_criteria_list = [
     'Nash Bargaining', 'Compromise Programming', 'Proportional Fairness'
 ]
 
-# Feature Columns and Columns to Display
-feature_columns = ['Income', 'Credit Score', 'Loan Amount', 'Interest Rate']
-columns_to_display = ['Income', 'Credit Score', 'Loan Amount', 'Interest Rate', 'Applicant Type', 'Recoveries']
+#Define metrics
+fairness_metrics_list=['Demographic Parity', 'Equal Opportunity', 'Equalized Odds', 'Calibration']
+standard_metrics_list=['Precision', 'Recall', 'F1 Score', 'Accuracy']
+case_metrics_list=[ 'Total Profit',  'Total Loss', 'Unexploited Profit']
 
-# Ranking Criteria, Metrics for Evaluation, and Ranking Weights
+
+# Ranking Criteria, Metrics used for Evaluation and Ranking Weights
 ranking_criteria, metrics_for_evaluation, ranking_weights = create_ranking_criteria()
 
+#Models for the outcome (classifier) and reward (regressor) prediction 
 classifier= RandomForestClassifier()
 regressor= RandomForestRegressor
 

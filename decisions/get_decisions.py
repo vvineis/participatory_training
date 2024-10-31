@@ -1,7 +1,7 @@
 from config import (feature_columns)
 import numpy as np
 import pandas as pd
-from b3_compromise_functions import*
+from decisions.compromise_functions import*
 
 class DecisionProcessor:
     def __init__(self, outcome_model, reward_models, onehot_encoder, actions_set, feature_columns, categorical_columns, 
@@ -67,10 +67,9 @@ class DecisionProcessor:
     
 
     def get_decisions(self, X_val_or_test_reward):
-        expected_rewards_list = []
-        all_expected_rewards = []
-        all_decision_solutions = []
-        clfr_pred_list = []
+        self.all_expected_rewards = []
+        self.all_decision_solutions = []
+        self.all_clfr_preds = []
 
         # Iterate through each row in the validation reward set
         index=0
@@ -79,7 +78,6 @@ class DecisionProcessor:
 
             # Compute expected rewards and classifier predictions
             expected_rewards, clfr_pred = self.compute_expected_reward(feature_context_df)
-            expected_rewards_list.append(expected_rewards)
 
             # Compute decision-making solutions based on expected rewards and disagreement points
             suggestion = SuggestAction(expected_rewards)
@@ -89,36 +87,62 @@ class DecisionProcessor:
             print(f'Clfr pred for row {index}: {clfr_pred} ')
             index+=1
 
-            all_expected_rewards.append(expected_rewards)
-            all_decision_solutions.append(decision_solutions)
-            clfr_pred_list.extend(clfr_pred)
+            self.all_expected_rewards.append(expected_rewards)
+            self.all_decision_solutions.append(decision_solutions)
+            self.all_clfr_preds.extend(clfr_pred)
             if index==2:
                 break
             else:
                 continue
 
-
-
-        ''' 
-        # Process dataframes for outputs
-        expected_rewards_df = convert_expected_rewards_to_df(all_expected_rewards)
-        decision_solutions_df = convert_decision_solutions_to_df(all_decision_solutions)
+    def convert_expected_rewards_to_df(self):
+        rows = []
+        for row_idx, reward_dict in enumerate(self.all_expected_rewards):
+            for action in reward_dict['Bank'].keys():
+                row = {
+                    'Row Index': row_idx,
+                    'Action': action,
+                    'Bank Reward': reward_dict['Bank'][action],
+                    'Applicant Reward': reward_dict['Applicant'][action],
+                    'Regulatory Reward': reward_dict['Regulatory'][action]
+                }
+                rows.append(row)
+        return pd.DataFrame(rows)
+    
+    def convert_decision_solutions_to_df(self):
+        rows = []
+        for row_idx, decision_dict in enumerate(self.all_decision_solutions):
+            for decision_type, solution in decision_dict.items():
+                row = {
+                    'Row Index': row_idx,
+                    'Decision Type': decision_type,
+                    'Best Action': solution['action'],
+                    'Value': solution['value']
+                }
+                rows.append(row)
+        return pd.DataFrame(rows)
+    
+    def process_decisions (self ):  #X_val_or_test_reward, y_val_or_test_outcome, unscaled_val_or_test_set
+        expected_rewards_df = self.convert_expected_rewards_to_df()
+        decision_solutions_df = self.convert_decision_solutions_to_df()
+        ''''
         summary_df = create_summary_df(X_val_or_test_reward, y_val_or_test_outcome, decision_solutions_df,
-                                       unscaled_val_or_test_set, expected_rewards_list, clfr_pred_list)
+                                       unscaled_val_or_test_set, self.all_expected_rewards, self.all_clfr_preds)
         decision_metrics_df = metrics_to_dataframe(compute_all_metrics(summary_df, self.actor_list, self.actions_set,
                                                                        self.decision_criteria_list))
 
         ranked_decision_metrics_df, rank_dict, best_criterion = add_ranking_and_weighted_sum_of_normalized_scores(
             decision_metrics_df, self.ranking_criteria, self.ranking_weights, self.metrics_for_evaluation)
+        '''
 
         return {
             'expected_rewards_df': expected_rewards_df,
             'decision_solutions_df': decision_solutions_df,
-            'summary_df': summary_df,
-            'decision_metrics_df': decision_metrics_df,
-            'ranked_decision_metrics_df': ranked_decision_metrics_df,
-            'rank_dict': rank_dict,
-            'best_criterion': best_criterion
+            #'summary_df': summary_df,
+           # 'decision_metrics_df': decision_metrics_df,
+           # 'ranked_decision_metrics_df': ranked_decision_metrics_df,
+          # 'rank_dict': rank_dict,
+           # 'best_criterion': best_criterion
         }
-        '''
+
 
