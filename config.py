@@ -7,7 +7,8 @@ actor_list = ['Bank', 'Applicant', 'Regulatory', 'Oracle', 'Classifier']
 reward_types=['Bank', 'Applicant', 'Regulatory']
 
 actions_set = ['Grant', 'Not Grant', 'Grant lower']
-outcomes_set = ['Fully Repaid', 'Partially Repaid', 'Not Repaid']
+positive_actions_set = ['Grant','Grant lower']
+outcomes_set = ['Fully Repaid', 'Partially Repaid', 'Not Repaid'] 
 
 # Feature Columns and Columns to Display
 feature_columns = ['Income', 'Credit Score', 'Loan Amount', 'Interest Rate']
@@ -23,6 +24,8 @@ decision_criteria_list = [
 fairness_metrics_list=['Demographic Parity', 'Equal Opportunity', 'Equalized Odds', 'Calibration']
 standard_metrics_list=['Precision', 'Recall', 'F1 Score', 'Accuracy']
 case_metrics_list=[ 'Total Profit',  'Total Loss', 'Unexploited Profit']
+
+positive_attribute_for_fairness= ['Applicant Type'] #note: should be boolean 
 
 
 # Ranking Criteria, Metrics used for Evaluation and Ranking Weights

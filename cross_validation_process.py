@@ -3,6 +3,12 @@ from sklearn.model_selection import ParameterGrid
 from models.reward_models import RewardModels
 from models.outcome_model import OutcomeModel
 from decisions.get_decisions import DecisionProcessor
+from decisions.evaluate_decisions import SummaryProcessor
+from decisions.compromise_functions import MaxIndividualReward
+from metrics.get_metrics import MetricsCalculator
+
+
+from config import fairness_metrics_list, standard_metrics_list, case_metrics_list, positive_actions_set, actions_set,  outcomes_set
 
 class CrossValidator:
     def __init__(self,classifier, regressor, param_grid_outcome, param_grid_reward, n_splits, 
@@ -106,9 +112,45 @@ class CrossValidator:
                     ranking_weights=self.ranking_weights,
                     metrics_for_evaluation=self.metrics_for_evaluation
                 )
-            decision_processor.get_decisions(X_val_reward)
-            results = decision_processor.process_decisions()
-            print(results)
+            
+            decisions_dfs = decision_processor.get_decisions_dfs(X_val_reward)
+            print(decisions_dfs)
+
+            max_individual_strategy = MaxIndividualReward()
+
+            # Instantiate MetricsCalculator and SummaryProcessor with the strategy
+            metrics_calculator = MetricsCalculator(fairness_metrics_list, standard_metrics_list, case_metrics_list, actions_set, outcomes_set)
+            summary_processor = SummaryProcessor(
+                metrics_calculator=metrics_calculator,
+                ranking_criteria=self.ranking_criteria,
+                ranking_weights=self.ranking_weights,
+                metrics_for_evaluation=self.metrics_for_evaluation,
+                actor_list=self.actor_list,
+                decision_criteria_list=self.decision_criteria_list,
+                actions_set=actions_set,
+                outcomes_set=outcomes_set,
+                strategy=max_individual_strategy  
+            )
+
+            # Process and retrieve all decision metrics and summary data
+            result = summary_processor.process_decision_metrics(
+                suggestions_df=suggestions_df,
+                X_val_reward=X_val_reward,
+                y_val_outcome=y_val_outcome,
+                decision_solutions_df=decision_solutions_df,
+                unscaled_X_val_reward=   unscaled_X_val_reward,
+                expected_rewards_list=expected_rewards_list,
+                clfr_pred_list=clfr_pred_list
+            )
+
+            # Access the result components
+            print(result['summary_df'])
+            print(result['decision_metrics_df'])
+            print(result['ranked_decision_metrics_df'])
+            print(result['rank_dict'])
+            print(result['best_criterion'])
+
+
 
             if fold==0:
                 break

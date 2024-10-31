@@ -2,6 +2,8 @@ from config import (feature_columns)
 import numpy as np
 import pandas as pd
 from decisions.compromise_functions import*
+from metrics.get_metrics import MetricsCalculator
+from config import (fairness_metrics_list, standard_metrics_list, case_metrics_list, positive_actions_set, outcomes_set)
 
 class DecisionProcessor:
     def __init__(self, outcome_model, reward_models, onehot_encoder, actions_set, feature_columns, categorical_columns, 
@@ -95,7 +97,7 @@ class DecisionProcessor:
             else:
                 continue
 
-    def convert_expected_rewards_to_df(self):
+    def _convert_expected_rewards_to_df(self):
         rows = []
         for row_idx, reward_dict in enumerate(self.all_expected_rewards):
             for action in reward_dict['Bank'].keys():
@@ -109,7 +111,7 @@ class DecisionProcessor:
                 rows.append(row)
         return pd.DataFrame(rows)
     
-    def convert_decision_solutions_to_df(self):
+    def _convert_decision_solutions_to_df(self):
         rows = []
         for row_idx, decision_dict in enumerate(self.all_decision_solutions):
             for decision_type, solution in decision_dict.items():
@@ -122,27 +124,12 @@ class DecisionProcessor:
                 rows.append(row)
         return pd.DataFrame(rows)
     
-    def process_decisions (self ):  #X_val_or_test_reward, y_val_or_test_outcome, unscaled_val_or_test_set
-        expected_rewards_df = self.convert_expected_rewards_to_df()
-        decision_solutions_df = self.convert_decision_solutions_to_df()
-        ''''
-        summary_df = create_summary_df(X_val_or_test_reward, y_val_or_test_outcome, decision_solutions_df,
-                                       unscaled_val_or_test_set, self.all_expected_rewards, self.all_clfr_preds)
-        decision_metrics_df = metrics_to_dataframe(compute_all_metrics(summary_df, self.actor_list, self.actions_set,
-                                                                       self.decision_criteria_list))
+    def get_decisions_dfs(self, X_val_or_test_reward):  
+        self.get_decisions(X_val_or_test_reward)
 
-        ranked_decision_metrics_df, rank_dict, best_criterion = add_ranking_and_weighted_sum_of_normalized_scores(
-            decision_metrics_df, self.ranking_criteria, self.ranking_weights, self.metrics_for_evaluation)
-        '''
-
+        # Convert expected rewards and decision solutions to DataFrames
         return {
-            'expected_rewards_df': expected_rewards_df,
-            'decision_solutions_df': decision_solutions_df,
-            #'summary_df': summary_df,
-           # 'decision_metrics_df': decision_metrics_df,
-           # 'ranked_decision_metrics_df': ranked_decision_metrics_df,
-          # 'rank_dict': rank_dict,
-           # 'best_criterion': best_criterion
-        }
-
+            'expected_rewards_df': self._convert_expected_rewards_to_df(),
+            'decision_solutions_df': self._convert_decision_solutions_to_df()
+    }
 
