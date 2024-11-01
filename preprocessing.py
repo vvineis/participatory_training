@@ -39,6 +39,8 @@ class DataProcessor:
     def prepare_for_training(self, train_df, val_df):
         # Process train and validation data for outcome and reward prediction
         train_df = self.scale_features(train_df)
+        unscaled_val_or_test_df = val_df[self.columns_to_display].copy()
+    
         #print(f"train_df_shape{train_df.shape}")
         val_or_test_df = self.scale_features(val_df, fit=False)
 
@@ -74,7 +76,7 @@ class DataProcessor:
             'train_reward': (X_train_reward_combined, *y_train_rewards.values()),
             'val_or_test_reward': (X_val_or_test_reward_combined, *y_val_or_test_rewards.values()),
             'val_or_test_set': val_or_test_df,
-            'unscaled_val_or_test_set': val_or_test_df[self.columns_to_display].copy(),
+            'unscaled_val_or_test_set': unscaled_val_or_test_df,
             'scaler': self.scaler,
             'onehot_encoder': self.onehot_encoder
         }

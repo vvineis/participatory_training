@@ -19,22 +19,10 @@ class SummaryProcessor:
         self.strategy = strategy  # Use the provided strategy for computing actions
 
     def create_summary_df(self, y_val_outcome, decisions_df, unscaled_X_val_reward, expected_rewards_list, clfr_pred_list):
-        """
-        Create a summary DataFrame that includes the unscaled feature context, true outcomes,
-        and suggested actions by different decision criteria and each actor.
-
-        Args:
-            y_val_outcome (pd.Series): True outcomes for the validation set.
-            decisions_df (pd.DataFrame): DataFrame of best actions for each decision criterion.
-            unscaled_X_val_reward (pd.DataFrame): Original feature context before scaling.
-            expected_rewards_list (list): List of expected rewards for each row in the validation set.
-            clfr_pred_list (list): List of classifier predictions for each row.
-
-        Returns:
-            pd.DataFrame: A summary DataFrame with the unscaled features, true outcomes, and suggested actions.
-        """
+ 
         # Ensure consistent lengths for inputs
         num_rows = len(unscaled_X_val_reward)
+        print (len(y_val_outcome), num_rows, len(expected_rewards_list),  len(clfr_pred_list))
         if not (len(y_val_outcome) == num_rows == len(expected_rewards_list) == len(clfr_pred_list)):
             raise ValueError("Input lengths must match: unscaled_X_val_reward, y_val_outcome, expected_rewards_list, and clfr_pred_list.")
 
@@ -64,6 +52,8 @@ class SummaryProcessor:
         for actor, actions in suggested_actions.items():
             summary_df[f'{actor} Suggested Action'] = actions
 
+        summary_df.keys()
+
         return summary_df
 
     def _map_outcome_to_action(self, outcome):
@@ -74,50 +64,92 @@ class SummaryProcessor:
         }.get(outcome, 'Grant lower')
 
     def metrics_to_dataframe(self, metrics):
-        """Convert a dictionary of metrics to a DataFrame."""
         return pd.DataFrame([{'Actor/Criterion': k, **v} for k, v in metrics.items()])
 
-    def _calculate_weighted_sum_scores(self, decision_metrics_df):
+
+    def _add_ranking_and_weighted_sum_of_normalized_scores(self, metrics_df, actor_criterion_col='Actor/Criterion'):
         """
-        Rank decision metrics and compute the best criterion based on the weighted sum of normalized scores.
+        Add normalized columns, rank actors/criteria based on normalized metrics, and compute the weighted sum of normalized scores.
 
         Args:
-            decision_metrics_df (pd.DataFrame): DataFrame containing decision metrics for ranking.
+            metrics_df (pd.DataFrame): DataFrame containing metrics for each actor or criterion.
+            ranking_criteria (dict): Mapping metric column names to ranking strategies ('max', 'min', 'zero').
+            ranking_weights (dict): Mapping metric column names to their respective weights.
+            metrics_for_evaluation (list): List of metrics to evaluate and compute the weighted sum.
+            actor_criterion_col (str): The name of the column to be used as the key in the output dictionary.
 
         Returns:
-            tuple: A tuple containing the ranked DataFrame, a dictionary of rank scores, and the best criterion.
+            ranked_df (pd.DataFrame): DataFrame with normalized columns, ranking columns, and weighted sum of normalized scores.
+            weighted_sum_dict (dict): Dictionary with Actor/Criterion as the key and the weighted sum as the value.
+            best_actor_criterion (str): The actor/criterion with the highest weighted sum of normalized scores.
         """
-        normalized_scores = {criterion: decision_metrics_df[criterion] / decision_metrics_df[criterion].max() for criterion in self.ranking_criteria}
-        weighted_sums = {criterion: (normalized_scores[criterion] * self.ranking_weights[criterion]).sum() for criterion in normalized_scores}
-        ranked_df = pd.DataFrame.from_dict(weighted_sums, orient='index', columns=['Weighted Sum']).sort_values(by='Weighted Sum', ascending=False)
+        normalized_df = metrics_df.copy()
 
-        return ranked_df, ranked_df['Weighted Sum'].to_dict(), ranked_df.index[0]
+        # Verify ranking weights are correctly formatted
+        if not isinstance(self.ranking_weights, dict):
+            raise ValueError("ranking_weights must be a dictionary.")
 
-    def process_decision_metrics(self, suggestions_df, y_val_outcome, decisions_df, unscaled_X_val_reward, expected_rewards_list, clfr_pred_list, positive_actions_set):
-        """
-        Process and generate all decision metrics and return a dictionary of DataFrames and ranking results.
+        # Normalize weights
+        total_weight = sum(self.ranking_weights.get(metric, 0) for metric in self.metrics_for_evaluation)
+        if total_weight == 0:
+            raise ValueError("Total weight cannot be zero.")
 
-        Args:
-            suggestions_df (pd.DataFrame): DataFrame with suggested actions by each actor.
-            y_val_outcome (pd.Series): True outcomes for the validation set.
-            decisions_df (pd.DataFrame): DataFrame of best actions for each decision criterion.
-            unscaled_X_val_reward (pd.DataFrame): Original feature context before scaling.
-            expected_rewards_list (list): List of expected rewards for each row in the validation set.
-            clfr_pred_list (list): List of classifier predictions for each row.
+        normalized_weights = {metric: self.ranking_weights[metric] / total_weight for metric in self.metrics_for_evaluation}
 
-        Returns:
-            dict: A dictionary containing the summary DataFrame, decision metrics DataFrame, 
-                  ranked metrics DataFrame, rank dictionary, and best criterion.
-        """
+        normalized_columns = []
+        ranking_columns = []
+
+        # Normalize the columns based on the criteria provided (min, max, zero)
+        for column in self.metrics_for_evaluation:
+            if column == "Accuracy":
+                normalized_df[f'{column} Normalized'] = normalized_df[column]
+            elif self.ranking_criteria[column] == 'max':
+                min_value, max_value = normalized_df[column].min(), normalized_df[column].max()
+                normalized_df[f'{column} Normalized'] = (normalized_df[column] - min_value) / max((max_value - min_value), 1e-9)
+            elif self.ranking_criteria[column] == 'min':
+                min_value, max_value = normalized_df[column].min(), normalized_df[column].max()
+                normalized_df[f'{column} Normalized'] = (max_value - normalized_df[column]) / max((max_value - min_value), 1e-9)
+            elif self.ranking_criteria[column] == 'zero':
+                max_abs_value = normalized_df[column].abs().max()
+                normalized_df[f'{column} Normalized'] = 1 - (normalized_df[column].abs() / max(max_abs_value, 1e-9))
+
+            normalized_columns.append(f'{column} Normalized')
+
+        # Compute rankings based on normalized columns and the specified criteria
+        for column in self.metrics_for_evaluation:
+            norm_column = f'{column} Normalized'
+            rank_column = f'{column} Rank'
+
+            # Rank higher normalized values better for all metrics (as they are normalized)
+            normalized_df[rank_column] = normalized_df[norm_column].rank(ascending=False, method='min')
+            ranking_columns.append(rank_column)
+
+        # Compute weighted sum of normalized scores for each actor/criterion
+        normalized_df['Weighted Normalized-Sum'] = sum(
+            normalized_df[f'{metric} Normalized'] * normalized_weights.get(metric, 0) for metric in self.metrics_for_evaluation
+        )
+
+        # Create a dictionary with Actor/Criterion as the key and the weighted normalized sum as the value
+        weighted_sum_dict = normalized_df.set_index(actor_criterion_col)['Weighted Normalized-Sum'].to_dict()
+
+        # Find the actor/criterion with the highest weighted sum of normalized scores
+        best_actor_criterion = max(weighted_sum_dict, key=weighted_sum_dict.get)
+
+        return normalized_df.sort_values(by='Weighted Normalized-Sum', ascending=False).reset_index(drop=True), weighted_sum_dict, best_actor_criterion
+
+
+    def process_decision_metrics(self,actor_list,  y_val_outcome, decisions_df, unscaled_X_val_reward, expected_rewards_list, clfr_pred_list, positive_attribute_for_fairness):
+
         # Create summary DataFrame
         summary_df = self.create_summary_df(y_val_outcome, decisions_df, unscaled_X_val_reward, expected_rewards_list, clfr_pred_list)
+        print (f"summary_df_columns {summary_df.columns}")
         
         # Calculate decision metrics using MetricsCalculator
-        decision_metrics = self.metrics_calculator.compute_all_metrics(suggestions_df, self.reward_types, self.decision_criteria_list, positive_actions_set, true_outcome_col='True Outcome')
-        decision_metrics_df = self.metrics_to_dataframe(decision_metrics)
+        decision_metrics_df = self.metrics_to_dataframe(self.metrics_calculator.compute_all_metrics(summary_df, actor_list, self.decision_criteria_list, positive_attribute_for_fairness, true_outcome_col='True Outcome'))
+        print (f"decision_metrics_df_head {decision_metrics_df.head()}")
 
         # Apply ranking and weighted sum calculations
-        ranked_decision_metrics_df, rank_dict, best_criterion = self._calculate_weighted_sum_scores(decision_metrics_df)
+        ranked_decision_metrics_df, rank_dict, best_criterion = self._add_ranking_and_weighted_sum_of_normalized_scores(decision_metrics_df)
 
         return {
             'summary_df': summary_df,

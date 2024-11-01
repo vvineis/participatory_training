@@ -37,7 +37,7 @@ class MetricsCalculator:
             if decision_col not in fairness_cache:
                 fairness_calculator = FairnessMetrics(
                     suggestions_df, decision_col, positive_attribute_for_fairness, positive_group_value, 
-                    true_outcome_col, positive_actions_set=self.positive_actions_set, outcomes_set=self.outcomes_set
+                    self.positive_actions_set, self.outcomes_set, outcome_col=true_outcome_col
                 )
                 fairness_cache[decision_col] = fairness_calculator.get_metrics(self.fairness_metrics_list)
 
@@ -56,7 +56,7 @@ class MetricsCalculator:
                     metrics[actor][metric] = actor_metrics_calculator.compute_total_loss()
 
             # Standard Metrics
-            standard_metrics_calculator = StandardMetrics(suggestions_df, decision_col, true_outcome_col)
+            standard_metrics_calculator = StandardMetrics(suggestions_df, decision_col, true_outcome_col,  self.actions_set, self.outcomes_set)
             standard_metrics = standard_metrics_calculator.compute_all_metrics()
             for metric in self.standard_metrics_list:
                 metrics[actor][metric] = standard_metrics.get(metric, None)
@@ -68,11 +68,17 @@ class MetricsCalculator:
                     metrics[actor][f'{metric_name}_{key}'] = value
 
             # Max-Min Fairness Calculations for Fairness Metrics
+
+            grant_parity = fairness_metrics['Demographic Parity'].get(f'{self.positive_actions_set[0]} Parity')
+            grant_lower_parity = fairness_metrics['Demographic Parity'].get(f'{self.positive_actions_set[1]} Parity')
+            positive_action_parity = fairness_metrics['Demographic Parity'].get('Positive Action Parity')
+
             metrics[actor]['Demographic Parity_Worst'] = self._compute_max_min_fairness(
-                fairness_metrics['Demographic Parity'].get(f'{self.actions_set[0]} Parity'),
-                fairness_metrics['Demographic Parity'].get(f'{self.actions_set[1]} Parity'),
-                fairness_metrics['Demographic Parity'].get('Positive Action Parity')
+                grant_parity,
+                grant_lower_parity,
+                positive_action_parity
             )
+            
             metrics[actor]['Equal Opportunity_Worst'] = self._compute_max_min_fairness(
                 fairness_metrics['Equal Opportunity'].get(f'TPR {self.outcomes_set[0]} Parity'),
                 fairness_metrics['Equal Opportunity'].get(f'TPR {self.outcomes_set[1]} Parity')
@@ -82,8 +88,8 @@ class MetricsCalculator:
                 fairness_metrics['Equalized Odds'].get(f'Equalized Odds {self.outcomes_set[1]}')
             )
             metrics[actor]['Calibration_Worst'] = self._compute_max_min_fairness(
-                fairness_metrics['Calibration'].get(f'{self.actions_set[0]} Calibration ({self.outcomes_set[0]})'),
-                fairness_metrics['Calibration'].get(f'{self.actions_set[1]} Calibration ({self.outcomes_set[1]})')
+                fairness_metrics['Calibration'].get(f'{self.positive_actions_set[0]} Calibration ({self.outcomes_set[0]})'),
+                fairness_metrics['Calibration'].get(f'{self.positive_actions_set[1]} Calibration ({self.outcomes_set[1]})')
             )
 
             # Action Percentages: Retrieve from cache and dynamically update per actor

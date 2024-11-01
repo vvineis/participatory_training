@@ -8,7 +8,7 @@ from decisions.compromise_functions import MaxIndividualReward
 from metrics.get_metrics import MetricsCalculator
 
 
-from config import fairness_metrics_list, standard_metrics_list, case_metrics_list, positive_actions_set, actions_set,  outcomes_set
+from config import fairness_metrics_list, standard_metrics_list, case_metrics_list, positive_actions_set, actions_set,  outcomes_set, positive_attribute_for_fairness, actor_list
 
 class CrossValidator:
     def __init__(self,classifier, regressor, param_grid_outcome, param_grid_reward, n_splits, 
@@ -115,6 +115,7 @@ class CrossValidator:
                 )
             
             all_expected_rewards, all_decisions, all_clsf_pred, decisions_df = decision_processor.get_decisions(X_val_reward)
+            print(f"decisions_df_columns: {decisions_df.columns}")
 
             max_individual_strategy = MaxIndividualReward()
 
@@ -132,31 +133,18 @@ class CrossValidator:
                 strategy=max_individual_strategy  
             )
 
-            result = summary_processor.process_decision_metrics(
-                suggestions_df= decisions_df,             
+            result = summary_processor.process_decision_metrics(   
+                actor_list= actor_list, 
                 y_val_outcome=y_val_outcome,              
                 decisions_df=decisions_df,                 
                 unscaled_X_val_reward=fold_dict['unscaled_val_or_test_set'], 
                 expected_rewards_list=all_expected_rewards, 
                 clfr_pred_list=all_clsf_pred,
-                positive_actions_set= positive_actions_set        
+                positive_attribute_for_fairness= positive_attribute_for_fairness   
             )
                # Access the result components
-            print("Summary DataFrame:")
-            print(result['summary_df'].head(2))
-
-            print("\nDecision Metrics DataFrame:")
-            print(result['decision_metrics_df'].head(2))
-
             print("\nRanked Decision Metrics DataFrame:")
-            print(result['ranked_decision_metrics_df'].head(2))
-
-            print("\nRank Dictionary:")
-            print(result['rank_dict'])
-
-            print("\nBest Criterion:")
-            print(result['best_criterion'])
-
+            print(result['ranked_decision_metrics_df'])
 
             if fold==0:
                 break

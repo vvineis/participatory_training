@@ -74,7 +74,7 @@ class DecisionProcessor:
         self.all_clfr_preds = []
 
         # Iterate through each row in the validation reward set
-        index=0
+        #index=0
         for _, feature_context in X_val_or_test_reward.iterrows():
             feature_context_df = pd.DataFrame([feature_context])
 
@@ -90,11 +90,11 @@ class DecisionProcessor:
             self.all_decision_solutions.append(decision_solutions)
             self.all_clfr_preds.extend(clfr_pred)
 
-            index+=1
-            if index==2:
-                break
-            else:
-                continue
+            #index+=1
+            #if index==2:
+             #   break
+            #else:
+             #   continue
         return  self.all_expected_rewards, self.all_decision_solutions, self.all_clfr_preds, self._convert_decision_solutions_to_df()
         
     def _convert_decision_solutions_to_df(self):

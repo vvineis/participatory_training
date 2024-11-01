@@ -25,7 +25,7 @@ fairness_metrics_list=['Demographic Parity', 'Equal Opportunity', 'Equalized Odd
 standard_metrics_list=['Precision', 'Recall', 'F1 Score', 'Accuracy']
 case_metrics_list=[ 'Total Profit',  'Total Loss', 'Unexploited Profit']
 
-positive_attribute_for_fairness= ['Applicant Type'] #note: should be boolean 
+positive_attribute_for_fairness= 'Applicant Type' #note: should be boolean 
 
 
 # Ranking Criteria, Metrics used for Evaluation and Ranking Weights
