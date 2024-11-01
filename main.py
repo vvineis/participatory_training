@@ -1,6 +1,7 @@
 from preprocessing import DataProcessor
 from rewards.get_rewards import RewardCalculator
 from cross_validation_process import CrossValidator
+from final_evaluation import run_final_evaluation
 import pandas as pd
 
 from config import (
@@ -65,3 +66,9 @@ cross_validator.check_summary_lengths()
 
 print("Aggregated CV Results:")
 print(cv_results)
+
+print("Training final models on entire training set and evaluating on test set...")
+final_results = run_final_evaluation(data_processor, cv_results, all_train_set, test_set)
+
+print("Final evaluation results:")
+print(final_results)

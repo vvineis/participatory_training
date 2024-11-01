@@ -236,8 +236,10 @@ class CrossValidator:
             'decision_metrics_df': CV_decision_metrics_df,
             'ranked_decision_metrics_df': CV_ranked_decision_metrics_df,
             'rank_dict': CV_rank_dict,
-            'best_criterion': CV_best_criterion
-        }
+            'best_criterion': CV_best_criterion,
+            'suggested_params_outcome': self.cv_results['suggested_params_outcome'],
+            'suggested_params_reward': self.cv_results['suggested_params_reward']
+                    }
         
         print("Cross-validation results aggregation completed.")
         return CV_results_dict

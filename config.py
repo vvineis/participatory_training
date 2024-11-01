@@ -13,6 +13,7 @@ outcomes_set = ['Fully Repaid', 'Partially Repaid', 'Not Repaid']
 # Feature Columns and Columns to Display
 feature_columns = ['Income', 'Credit Score', 'Loan Amount', 'Interest Rate']
 columns_to_display = ['Income', 'Credit Score', 'Loan Amount', 'Interest Rate', 'Applicant Type', 'Recoveries']
+categorical_columns=['Action', 'Outcome']
 
 # Decision Criteria List
 decision_criteria_list = [
