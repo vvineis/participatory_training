@@ -12,6 +12,7 @@ from config import (
 
 
 df = pd.read_csv('data/lending_club_data.csv')
+df=df.iloc[0:1000]
 
 reward_calculator = RewardCalculator(reward_types)
 df_ready = reward_calculator.compute_rewards(df)
@@ -72,3 +73,8 @@ final_results = run_final_evaluation(data_processor, cv_results, all_train_set, 
 
 print("Final evaluation results:")
 print(final_results)
+
+cv_results['ranked_decision_metrics_df'].to_csv('results/cv_ranked_decision_metrics.csv', index=False)
+final_results['ranked_decision_metrics_df'].to_csv('results/final_ranked_decision_metrics.csv', index=False)
+
+print("Results saved to the 'results' folder")
