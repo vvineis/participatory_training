@@ -7,7 +7,6 @@ class FairnessMetrics:
         self.suggestions_df = suggestions_df
         self.decision_col = decision_col
         self.group_col = group_col
-        print(f"group_col {group_col}")
         self.positive_group_value = positive_group_value
         self.outcome_col = outcome_col
         self.actions_set = positive_actions_set
@@ -35,17 +34,14 @@ class FairnessMetrics:
                     (negative_group[self.outcome_col] == outcome_value) & 
                     (negative_group[self.decision_col] == decision_value)
                 ).mean() if len(negative_group) > 0 else np.nan
-        print("Computed Rates:", rates) 
+
 
         return rates
 
     def compute_demographic_parity(self):
         grant_parity = self._calculate_parity(self.actions_set[0], self.outcomes_set[0])
-        print("Grant Parity:", grant_parity)  
         grant_lower_parity = self._calculate_parity(self.actions_set[1], self.outcomes_set[1])
-        print("Grant Lower Parity:", grant_lower_parity)
         positive_action_parity = grant_parity + grant_lower_parity
-        print("Positive Action Parity:", positive_action_parity)
 
         return {
             f'{self.actions_set[0]} Parity': grant_parity,
@@ -108,7 +104,7 @@ class FairnessMetrics:
             'Equalized Odds': self.compute_equalized_odds,
             'Calibration': self.compute_calibration
         }
-        print(available_metrics)
+
 
         selected_metrics = {}
         for metric in fairness_metrics_list:

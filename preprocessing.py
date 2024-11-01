@@ -4,7 +4,7 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from rewards.get_rewards import RewardCalculator
 
 class DataProcessor:
-    def __init__(self, df, feature_columns, columns_to_display, categorical_columns, reward_types, test_size=0.2, n_splits=2, random_split=True):
+    def __init__(self, df, feature_columns, columns_to_display, categorical_columns, reward_types, test_size, n_splits, random_split=True):
         self.df = df
         self.feature_columns = feature_columns
         self.columns_to_display = columns_to_display
@@ -62,7 +62,7 @@ class DataProcessor:
         X_val_or_test_reward_combined = pd.concat(
             [val_or_test_df[self.feature_columns].reset_index(drop=True), X_val_encoded.reset_index(drop=True)], axis=1
         )
-        print(f'X_train_reward_combined columns {X_train_reward_combined.columns}')
+
         # Dynamically retrieve validation rewards
         y_val_or_test_rewards = {
             reward_type: val_or_test_df[f'{reward_type}_reward']

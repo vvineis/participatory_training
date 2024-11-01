@@ -31,7 +31,7 @@ class OutcomeModel:
         
         # Calculate accuracy for the validation set
         accuracy = accuracy_score(y_val, y_pred_val)
-        print(f"Outcome Prediction Accuracy (Validation Set): {accuracy * 100:.2f}%")
+        #print(f"Outcome Prediction Accuracy (Validation Set): {accuracy * 100:.2f}%")
         
         return accuracy
 

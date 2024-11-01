@@ -105,7 +105,7 @@ class SuggestAction:
                 'Compromise Programming': CompromiseProgramming(),
                 'Proportional Fairness': ProportionalFairness(),
             }
-        #print(self.strategies.keys())
+
 
     def compute_all_compromise_solutions(self):
         results = {}

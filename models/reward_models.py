@@ -37,9 +37,9 @@ class RewardModels:
         mse_applicant = mean_squared_error(y_val_applicant, y_pred_val_applicant)
         mse_regulatory = mean_squared_error(y_val_regulatory, y_pred_val_regulatory)
 
-        print(f"Bank Reward Prediction MSE (Validation Set): {mse_bank:.4f}")
-        print(f"Applicant Reward Prediction MSE (Validation Set): {mse_applicant:.4f}")
-        print(f"Regulatory Reward Prediction MSE (Validation Set): {mse_regulatory:.4f}")
+       # print(f"Bank Reward Prediction MSE (Validation Set): {mse_bank:.4f}")
+       # print(f"Applicant Reward Prediction MSE (Validation Set): {mse_applicant:.4f}")
+       # print(f"Regulatory Reward Prediction MSE (Validation Set): {mse_regulatory:.4f}")
 
         return {
             'bank_mse': mse_bank,

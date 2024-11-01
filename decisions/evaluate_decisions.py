@@ -20,12 +20,6 @@ class SummaryProcessor:
 
     def create_summary_df(self, y_val_outcome, decisions_df, unscaled_X_val_reward, expected_rewards_list, clfr_pred_list):
  
-        # Ensure consistent lengths for inputs
-        num_rows = len(unscaled_X_val_reward)
-        print (len(y_val_outcome), num_rows, len(expected_rewards_list),  len(clfr_pred_list))
-        if not (len(y_val_outcome) == num_rows == len(expected_rewards_list) == len(clfr_pred_list)):
-            raise ValueError("Input lengths must match: unscaled_X_val_reward, y_val_outcome, expected_rewards_list, and clfr_pred_list.")
-
         # Unscaled feature context with true outcomes
         feature_context_df = unscaled_X_val_reward.copy()
         feature_context_df['True Outcome'] = y_val_outcome.values
@@ -142,11 +136,9 @@ class SummaryProcessor:
 
         # Create summary DataFrame
         summary_df = self.create_summary_df(y_val_outcome, decisions_df, unscaled_X_val_reward, expected_rewards_list, clfr_pred_list)
-        print (f"summary_df_columns {summary_df.columns}")
         
         # Calculate decision metrics using MetricsCalculator
         decision_metrics_df = self.metrics_to_dataframe(self.metrics_calculator.compute_all_metrics(summary_df, actor_list, self.decision_criteria_list, positive_attribute_for_fairness, true_outcome_col='True Outcome'))
-        print (f"decision_metrics_df_head {decision_metrics_df.head()}")
 
         # Apply ranking and weighted sum calculations
         ranked_decision_metrics_df, rank_dict, best_criterion = self._add_ranking_and_weighted_sum_of_normalized_scores(decision_metrics_df)
