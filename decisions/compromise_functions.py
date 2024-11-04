@@ -42,7 +42,8 @@ class KalaiSmorodinsky(SolutionStrategy):
 # Nash Bargaining Solution Strategy
 class NashBargainingSolution(SolutionStrategy):
     def compute(self, expected_rewards, disagreement_point, ideal_point, all_actions):
-        products = {
+        # Full Agreement: Check for actions that meet the disagreement point for all actors
+        full_agreement_products = {
             action: prod(
                 max(0, expected_rewards[actor].get(action, disagreement_point[actor]) - disagreement_point[actor])
                 for actor in expected_rewards
@@ -50,9 +51,32 @@ class NashBargainingSolution(SolutionStrategy):
             for action in all_actions
             if all(expected_rewards[actor].get(action, disagreement_point[actor]) > disagreement_point[actor] for actor in expected_rewards)
         }
-        best_action = max(products, key=products.get)
-        return best_action, products[best_action]
 
+        # If there are actions that satisfy full agreement, use the best one
+        if full_agreement_products:
+            best_action = max(full_agreement_products, key=full_agreement_products.get)
+            return best_action, full_agreement_products[best_action]
+
+        # Partial Agreement: If no action meets full agreement, use majority threshold
+        num_actors = len(expected_rewards)
+        majority_threshold = num_actors // 2 + 1  # Majority threshold (at least half + 1)
+
+        partial_agreement_products = {
+            action: prod(
+                max(0, expected_rewards[actor].get(action, disagreement_point[actor]) - disagreement_point[actor])
+                for actor in expected_rewards
+            )
+            for action in all_actions
+            if sum(expected_rewards[actor].get(action, disagreement_point[actor]) > disagreement_point[actor] for actor in expected_rewards) >= majority_threshold
+        }
+
+        # If there are actions that meet partial agreement, use the best one
+        if partial_agreement_products:
+            best_action = max(partial_agreement_products, key=partial_agreement_products.get)
+            return best_action, partial_agreement_products[best_action]
+
+        # If no actions meet even partial agreement, raise an error or handle as needed
+        raise ValueError("No actions meet full or partial agreement thresholds.")
 # Nash Social Welfare Strategy
 class NashSocialWelfare(SolutionStrategy):
     def compute(self, expected_rewards, disagreement_point, ideal_point, all_actions, epsilon=1e-6):

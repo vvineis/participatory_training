@@ -1,6 +1,8 @@
 from metrics.standard_metrics import StandardMetrics
 from metrics.fairness_metrics import FairnessMetrics
 from metrics.case_specific_metrics import CaseMetrics
+from metrics.real_payoffs import RealPayoffMetrics
+from rewards.get_rewards import RewardCalculator
 
 class MetricsCalculator:
     def __init__(self, fairness_metrics_list, standard_metrics_list, case_metrics_list, actions_set, outcomes_set, positive_actions_set):
@@ -18,7 +20,7 @@ class MetricsCalculator:
             return max(abs(value1), abs(value2), abs(value3))
         return max(abs(value1), abs(value2))
 
-    def compute_all_metrics(self, suggestions_df, actor_list, decision_criteria_list, positive_attribute_for_fairness, true_outcome_col='True Outcome'):
+    def compute_all_metrics(self, suggestions_df, actor_list, reward_types, decision_criteria_list, positive_attribute_for_fairness, true_outcome_col='True Outcome'):
         metrics = {actor: {} for actor in actor_list + decision_criteria_list}
         positive_attribute_for_fairness = positive_attribute_for_fairness
         positive_group_value = 1      # Group considered vulnerable
@@ -97,5 +99,19 @@ class MetricsCalculator:
             metrics[actor].update({
                 f'Percent_{action}': action_counts.get(action, 0) for action in self.actions_set
             })
+
+
+            for reward_actor in reward_types:
+                reward_structures = RewardCalculator.REWARD_STRUCTURES
+                payoff_metrics_calculator = RealPayoffMetrics(
+                    suggestions_df, decision_col, true_outcome_col, 
+                    reward_structures, reward_actor, positive_attribute_for_fairness
+                )
+                total_real_payoff = payoff_metrics_calculator.compute_total_real_payoff()
+                
+                # Store the payoff under reward_actor's metrics but using the context of `actor`
+                metrics[actor][f'Total Real Payoff ({reward_actor})'] = total_real_payoff
+
+
 
         return metrics

@@ -4,17 +4,21 @@ from sklearn.metrics import mean_squared_error
 
 
 class RewardModels:
-    def __init__(self, regressor_class, **regressor_params):
+    def __init__(self, regressor_class, model_random_state=42, **regressor_params):
 
         # Initialize separate models for each reward component
+        if 'random_state' in regressor_class().get_params():
+            regressor_params['random_state'] = model_random_state
         self.bank_regressor = regressor_class(**regressor_params)
         self.applicant_regressor = regressor_class(**regressor_params)
         self.regulatory_regressor = regressor_class(**regressor_params)
 
     def train(self, X_train, y_train_bank, y_train_applicant, y_train_regulatory):
 
+
         # Ensure feature names are strings
         X_train.columns = X_train.columns.astype(str)
+
 
         # Train each reward model
         self.bank_regressor.fit(X_train, y_train_bank)

@@ -138,7 +138,7 @@ class SummaryProcessor:
         summary_df = self.create_summary_df(y_val_outcome, decisions_df, unscaled_X_val_reward, expected_rewards_list, clfr_pred_list)
         
         # Calculate decision metrics using MetricsCalculator
-        decision_metrics_df = self.metrics_to_dataframe(self.metrics_calculator.compute_all_metrics(summary_df, actor_list, self.decision_criteria_list, positive_attribute_for_fairness, true_outcome_col='True Outcome'))
+        decision_metrics_df = self.metrics_to_dataframe(self.metrics_calculator.compute_all_metrics(summary_df, actor_list, self.reward_types, self.decision_criteria_list, positive_attribute_for_fairness, true_outcome_col='True Outcome'))
 
         # Apply ranking and weighted sum calculations
         ranked_decision_metrics_df, rank_dict, best_criterion = self._add_ranking_and_weighted_sum_of_normalized_scores(decision_metrics_df)

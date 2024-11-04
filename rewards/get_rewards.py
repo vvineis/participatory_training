@@ -79,6 +79,7 @@ class RewardCalculator:
     def __init__(self, reward_types, noise_level=0.05):
         self.noise_level = noise_level
         self.reward_types= reward_types
+        self.reward_structures = RewardCalculator.REWARD_STRUCTURES 
 
     def get_rewards(self, action, outcome, applicant_type, loan_amount, interest_rate):
         # Retrieve reward structure based on applicant type

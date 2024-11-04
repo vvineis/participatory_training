@@ -6,11 +6,12 @@ from sklearn.metrics import accuracy_score
 from imblearn.over_sampling import SMOTE
 
 class OutcomeModel:
-    def __init__(self, classifier, use_smote=True, smote_k_neighbors=1, smote_random_state=42):
+    def __init__(self, classifier, use_smote=True, smote_k_neighbors=1, smote_random_state=42,  model_random_state=111):
         self.classifier = classifier
         self.use_smote = use_smote
         self.smote_k_neighbors = smote_k_neighbors
         self.smote_random_state = smote_random_state
+        self.model_random_state= model_random_state
 
     def train(self, X_train, y_train, **hyperparams):
         if self.use_smote:
@@ -21,6 +22,9 @@ class OutcomeModel:
             X_train_resampled, y_train_resampled = X_train, y_train
 
         # Train the classifier with the (resampled) training set
+        if 'random_state' in self.classifier.get_params():
+            hyperparams['random_state'] = self.model_random_state
+        
         self.classifier.set_params(**hyperparams)
         self.classifier.fit(X_train_resampled, y_train_resampled)
 

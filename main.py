@@ -5,14 +5,14 @@ from final_evaluation import run_final_evaluation
 import pandas as pd
 
 from config import (
-    actor_list, reward_types, positive_actions_set, actions_set, decision_criteria_list, 
+    actor_list, reward_types, positive_actions_set, actions_set, decision_criteria_list, reward_types,
     feature_columns, columns_to_display, ranking_criteria,
     metrics_for_evaluation, ranking_weights, classifier, regressor, param_grid_outcome, param_grid_reward, positive_attribute_for_fairness
 )
 
 
 df = pd.read_csv('data/lending_club_data.csv')
-df=df.iloc[0:1000]
+df=df.iloc[0:600]
 
 reward_calculator = RewardCalculator(reward_types)
 df_ready = reward_calculator.compute_rewards(df)
@@ -28,7 +28,7 @@ data_processor = DataProcessor(
     categorical_columns=categorical_columns,
     reward_types=reward_types,
     test_size=0.2,
-    n_splits=5,
+    n_splits=2,
     random_split=True
 )
     
@@ -44,7 +44,7 @@ cross_validator = CrossValidator(
     regressor= regressor,
     param_grid_outcome=param_grid_outcome,
     param_grid_reward=param_grid_reward,
-    n_splits=5,
+    n_splits=2,
     process_train_val_folds=process_train_val_folds,
     feature_columns=feature_columns, 
     categorical_columns=categorical_columns,

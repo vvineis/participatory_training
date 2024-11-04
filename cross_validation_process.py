@@ -224,7 +224,7 @@ class CrossValidator:
         
         # Compute overall decision metrics
         CV_decision_metrics_df = self.summary_processor.metrics_to_dataframe(
-            self.metrics_calculator.compute_all_metrics(CV_summary_df, self.actor_list, self.decision_criteria_list, self.positive_attribute_for_fairness, true_outcome_col='True Outcome')
+            self.metrics_calculator.compute_all_metrics(CV_summary_df, self.actor_list, self.reward_types, self.decision_criteria_list, self.positive_attribute_for_fairness, true_outcome_col='True Outcome')
         )
         
         # Rank and compute weighted sum for overall performance
