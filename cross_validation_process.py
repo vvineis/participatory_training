@@ -131,6 +131,7 @@ class CrossValidator:
             X_val_outcome, y_val_outcome = fold_dict['val_or_test_outcome']
             X_train_reward, y_train_bank, y_train_applicant, y_train_regulatory = fold_dict['train_reward']
             X_val_reward, y_val_bank, y_val_applicant, y_val_regulatory = fold_dict['val_or_test_reward']
+            print(f'y_val_outcome: {y_val_outcome}')
 
             # Tune outcome model
             best_params_outcome, best_model_outcome, best_score_outcome = self.tune_outcome_model(

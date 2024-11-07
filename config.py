@@ -6,7 +6,7 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 actor_list = ['Bank', 'Applicant', 'Regulatory', 'Oracle', 'Classifier']
 reward_types=['Bank', 'Applicant', 'Regulatory']
 
-actions_set = ['Grant', 'Not Grant', 'Grant lower']
+actions_set = ['Grant', 'Grant lower','Not Grant', ]
 positive_actions_set = ['Grant','Grant lower']
 outcomes_set = ['Fully Repaid', 'Partially Repaid', 'Not Repaid'] 
 

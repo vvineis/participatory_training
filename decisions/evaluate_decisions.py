@@ -1,10 +1,11 @@
 import pandas as pd
+import random
 from decisions.get_decisions import DecisionProcessor
 from metrics.get_metrics import MetricsCalculator
 
 class SummaryProcessor:
     def __init__(self, metrics_calculator, ranking_criteria, ranking_weights, metrics_for_evaluation,
-                 reward_types, decision_criteria_list, actions_set, outcomes_set, strategy):
+                 reward_types, decision_criteria_list, actions_set, outcomes_set, strategy, seed=None):
         """
         Initialize the SummaryProcessor with necessary parameters, external objects, and the solution strategy.
         """
@@ -17,6 +18,10 @@ class SummaryProcessor:
         self.actions_set = actions_set
         self.outcomes_set = outcomes_set
         self.strategy = strategy  # Use the provided strategy for computing actions
+        self.seed = seed
+        if self.seed is not None:
+            random.seed(self.seed)
+
 
     def create_summary_df(self, y_val_outcome, decisions_df, unscaled_X_val_reward, expected_rewards_list, clfr_pred_list):
  
@@ -24,12 +29,13 @@ class SummaryProcessor:
         feature_context_df = unscaled_X_val_reward.copy()
         feature_context_df['True Outcome'] = y_val_outcome.values
 
+
         # Pivot decision solutions to show best actions by decision type
         decision_solutions_summary = decisions_df.pivot(index='Row Index', columns='Decision Type', values='Best Action')
         summary_df = pd.concat([feature_context_df.reset_index(drop=True), decision_solutions_summary.reset_index(drop=True)], axis=1)
 
         # Initialize lists for suggested actions
-        suggested_actions = {actor: [] for actor in self.reward_types + ['Oracle', 'Classifier']}
+        suggested_actions = {actor: [] for actor in self.reward_types + ['Oracle', 'Classifier', 'Random']}
 
         # Compute suggested actions for each row
         for idx, expected_rewards in enumerate(expected_rewards_list):
@@ -38,15 +44,17 @@ class SummaryProcessor:
             for actor in self.reward_types:
                 suggested_actions[actor].append(individual_actions[actor]['action'])
 
+
             # Oracle and Classifier suggested actions based on true outcomes and predictions
             suggested_actions['Oracle'].append(self._map_outcome_to_action(y_val_outcome.iloc[idx]))
             suggested_actions['Classifier'].append(self._map_outcome_to_action(clfr_pred_list[idx]))
+            suggested_actions['Random'].append(self._get_random_action())
+            #print(f' true outcome {y_val_outcome.iloc[idx]}')
 
         # Add suggested actions to summary DataFrame
         for actor, actions in suggested_actions.items():
             summary_df[f'{actor} Suggested Action'] = actions
 
-        summary_df.keys()
 
         return summary_df
 
@@ -56,6 +64,10 @@ class SummaryProcessor:
             'Fully Repaid': 'Grant',
             'Not Repaid': 'Not Grant'
         }.get(outcome, 'Grant lower')
+    
+    def _get_random_action(self):
+        """Select a random action from the actions set."""
+        return random.choice(list(self.actions_set))
 
     def metrics_to_dataframe(self, metrics):
         return pd.DataFrame([{'Actor/Criterion': k, **v} for k, v in metrics.items()])

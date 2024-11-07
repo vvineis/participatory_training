@@ -58,8 +58,11 @@ class MetricsCalculator:
                     metrics[actor][metric] = actor_metrics_calculator.compute_total_loss()
 
             # Standard Metrics
-            standard_metrics_calculator = StandardMetrics(suggestions_df, decision_col, true_outcome_col,  self.actions_set, self.outcomes_set)
-            standard_metrics = standard_metrics_calculator.compute_all_metrics()
+            standard_metrics_calculator = StandardMetrics(suggestions_df, decision_col, true_outcome_col, self.actions_set, self.outcomes_set)
+
+            # Compute only the metrics specified in self.standard_metrics_list
+            standard_metrics = standard_metrics_calculator.get_metrics(self.standard_metrics_list)
+
             for metric in self.standard_metrics_list:
                 metrics[actor][metric] = standard_metrics.get(metric, None)
 
