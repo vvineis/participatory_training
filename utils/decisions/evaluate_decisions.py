@@ -2,19 +2,18 @@ import pandas as pd
 import random
 
 class SummaryProcessor:
-    def __init__(self, metrics_calculator, ranking_criteria, ranking_weights, metrics_for_evaluation,
-                 reward_types, decision_criteria_list, actions_set, outcomes_set, strategy, seed=None):
+    def __init__(self, cfg, metrics_calculator, strategy, seed=None):
         """
         Initialize the SummaryProcessor with necessary parameters, external objects, and the solution strategy.
         """
         self.metrics_calculator = metrics_calculator
-        self.ranking_criteria = ranking_criteria
-        self.ranking_weights = dict(ranking_weights)
-        self.metrics_for_evaluation = metrics_for_evaluation
-        self.reward_types = reward_types
-        self.decision_criteria_list = decision_criteria_list
-        self.actions_set = actions_set
-        self.outcomes_set = outcomes_set
+        self.ranking_criteria = cfg.criteria.ranking_criteria
+        self.ranking_weights = dict(cfg.criteria.ranking_weights)
+        self.metrics_for_evaluation = cfg.criteria.metrics_for_evaluation
+        self.reward_types = cfg.setting.reward_types
+        self.decision_criteria_list = cfg.criteria.decision_criteria
+        self.actions_set = cfg.setting.actions_set
+        self.outcomes_set = cfg.setting.outcomes_set
         self.strategy = strategy  # Use the provided strategy for computing actions
         self.seed = seed
         if self.seed is not None:
@@ -141,13 +140,13 @@ class SummaryProcessor:
         return normalized_df.sort_values(by='Weighted Normalized-Sum', ascending=False).reset_index(drop=True), weighted_sum_dict, best_actor_criterion
 
 
-    def process_decision_metrics(self,actor_list,  y_val_outcome, decisions_df, unscaled_X_val_reward, expected_rewards_list, clfr_pred_list, positive_attribute_for_fairness):
+    def process_decision_metrics(self, y_val_outcome, decisions_df, unscaled_X_val_reward, expected_rewards_list, clfr_pred_list):
 
         # Create summary DataFrame
         summary_df = self.create_summary_df(y_val_outcome, decisions_df, unscaled_X_val_reward, expected_rewards_list, clfr_pred_list)
         
         # Calculate decision metrics using MetricsCalculator
-        decision_metrics_df = self.metrics_to_dataframe(self.metrics_calculator.compute_all_metrics(summary_df, actor_list, self.reward_types, self.decision_criteria_list, positive_attribute_for_fairness, true_outcome_col='True Outcome'))
+        decision_metrics_df = self.metrics_to_dataframe(self.metrics_calculator.compute_all_metrics(summary_df, true_outcome_col='True Outcome'))
 
         # Apply ranking and weighted sum calculations
         ranked_decision_metrics_df, rank_dict, best_criterion = self._add_ranking_and_weighted_sum_of_normalized_scores(decision_metrics_df)

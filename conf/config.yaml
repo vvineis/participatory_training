@@ -21,6 +21,6 @@ categorical_columns:
   - Action
   - Outcome
 
-cv_splits: 2
+cv_splits: 5
 test_size: 0.2
-sample_size: 1000
+sample_size: 5000

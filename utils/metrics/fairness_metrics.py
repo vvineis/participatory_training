@@ -1,16 +1,23 @@
 import numpy as np
 import pandas as pd
-
-
 class FairnessMetrics:
-    def __init__(self, suggestions_df, decision_col, group_col, positive_group_value, positive_actions_set, outcomes_set, outcome_col='True Outcome', ):
+    def __init__(self, cfg, suggestions_df, decision_col, outcome_col='True Outcome'):
+        # Ensure the column exists in the DataFrame
+        if decision_col not in suggestions_df.columns or outcome_col not in suggestions_df.columns:
+            raise ValueError(f"Columns {decision_col} or {outcome_col} not found in the DataFrame")
+
+        # Assign the config attributes directly
         self.suggestions_df = suggestions_df
         self.decision_col = decision_col
-        self.group_col = group_col
-        self.positive_group_value = positive_group_value
         self.outcome_col = outcome_col
-        self.actions_set = positive_actions_set
-        self.outcomes_set = outcomes_set
+
+        # Config-specified values
+        self.group_col = cfg.metrics.positive_attribute_for_fairness
+        self.positive_group_value = cfg.metrics.positive_group_value
+        self.actions_set = cfg.setting.positive_actions_set
+        self.outcomes_set = cfg.setting.outcomes_set
+
+        # Cache for computed rates
         self._rates = None 
 
     @property
@@ -20,12 +27,14 @@ class FairnessMetrics:
         return self._rates
 
     def _compute_rates(self):
+        # Define groups based on the positive attribute
         positive_group = self.suggestions_df[self.suggestions_df[self.group_col] == self.positive_group_value]
         negative_group = self.suggestions_df[self.suggestions_df[self.group_col] != self.positive_group_value]
 
         rates = {'positive': {}, 'negative': {}}
         for decision_value in self.actions_set:
             for outcome_value in self.outcomes_set:
+                # Calculate mean occurrence rates
                 rates['positive'][(decision_value, outcome_value)] = (
                     (positive_group[self.outcome_col] == outcome_value) & 
                     (positive_group[self.decision_col] == decision_value)
@@ -35,10 +44,10 @@ class FairnessMetrics:
                     (negative_group[self.decision_col] == decision_value)
                 ).mean() if len(negative_group) > 0 else np.nan
 
-
         return rates
 
     def compute_demographic_parity(self):
+        # Calculate demographic parity metrics
         grant_parity = self._calculate_parity(self.actions_set[0], self.outcomes_set[0])
         grant_lower_parity = self._calculate_parity(self.actions_set[1], self.outcomes_set[1])
         positive_action_parity = grant_parity + grant_lower_parity
@@ -50,6 +59,7 @@ class FairnessMetrics:
         }
 
     def compute_equal_opportunity(self):
+        # Calculate equal opportunity metrics
         tpr_fully_repaid_parity = self._calculate_parity(self.actions_set[0], self.outcomes_set[0])
         tpr_partially_repaid_parity = self._calculate_parity(self.actions_set[1], self.outcomes_set[1])
         
@@ -64,6 +74,7 @@ class FairnessMetrics:
         }
 
     def compute_equalized_odds(self):
+        # Calculate equalized odds metrics
         fully_repaid_equalized_odds = self._calculate_odds_difference(self.actions_set[0], self.outcomes_set[0], self.outcomes_set[2])
         partially_repaid_equalized_odds = self._calculate_odds_difference(self.actions_set[1], self.outcomes_set[1], self.outcomes_set[2])
 
@@ -78,6 +89,7 @@ class FairnessMetrics:
         }
 
     def compute_calibration(self):
+        # Calculate calibration metrics
         grant_calibration = self._calculate_parity(self.actions_set[0], self.outcomes_set[0])
         grant_lower_calibration = self._calculate_parity(self.actions_set[1], self.outcomes_set[1])
 
@@ -90,21 +102,23 @@ class FairnessMetrics:
         }
 
     def _calculate_parity(self, decision, outcome):
+        # Calculate parity for a given decision-outcome pair
         return self.rates['positive'][(decision, outcome)] - self.rates['negative'][(decision, outcome)]
 
     def _calculate_odds_difference(self, decision, positive_outcome, negative_outcome):
+        # Calculate odds difference for a given decision and outcomes
         pos_diff = self.rates['positive'][(decision, positive_outcome)] - self.rates['negative'][(decision, positive_outcome)]
         neg_diff = self.rates['positive'][(decision, negative_outcome)] - self.rates['negative'][(decision, negative_outcome)]
         return pos_diff - neg_diff
 
     def get_metrics(self, fairness_metrics_list):
+        # Select and compute only the requested metrics
         available_metrics = {
             'Demographic Parity': self.compute_demographic_parity,
             'Equal Opportunity': self.compute_equal_opportunity,
             'Equalized Odds': self.compute_equalized_odds,
             'Calibration': self.compute_calibration
         }
-
 
         selected_metrics = {}
         for metric in fairness_metrics_list:
@@ -114,5 +128,4 @@ class FairnessMetrics:
                 raise ValueError(f"Metric '{metric}' is not available. Choose from {list(available_metrics.keys())}.")
 
         return selected_metrics
-
 

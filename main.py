@@ -41,12 +41,7 @@ def main(cfg: DictConfig):
     # Initialize the DataProcessor
     data_processor = DataProcessor(
         df=df_ready,
-        feature_columns=cfg.setting.feature_columns,
-        columns_to_display=cfg.setting.columns_to_display,
-        categorical_columns=cfg.categorical_columns,
-        reward_types=cfg.setting.reward_types,
-        test_size=cfg.test_size,
-        n_splits=cfg.cv_splits,
+        cfg= cfg, 
         random_split=True
     )
 
@@ -54,15 +49,10 @@ def main(cfg: DictConfig):
     print("Train set shape:", all_train_set.shape)
     print("Test set shape:", test_set.shape)
 
-    # Initialize the CrossValidator
-    classifier = instantiate(cfg.models.outcome.classifier)
-    regressor = instantiate(cfg.models.rewards.regressor)
 
     # Initialize the CrossValidator with instantiated classifier and regressor
     cross_validator = CrossValidator(
         cfg=cfg,
-        classifier=classifier,
-        regressor=regressor,  # Pass the instantiated regressor here
         process_train_val_folds=process_train_val_folds
     )
 
@@ -77,7 +67,7 @@ def main(cfg: DictConfig):
     print(cv_results)
 
     print("Training final models on entire training set and evaluating on test set...")
-    final_results = run_final_evaluation(data_processor, cv_results, all_train_set, test_set, classifier, regressor, cfg)
+    final_results = run_final_evaluation(data_processor, cv_results, all_train_set, test_set,  cfg)
     print("Final evaluation results:")
     print(final_results)
 

@@ -3,15 +3,16 @@ from sklearn.model_selection import train_test_split, KFold
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from utils.rewards.get_rewards import RewardCalculator
 
+
 class DataProcessor:
-    def __init__(self, df, feature_columns, columns_to_display, categorical_columns, reward_types, test_size, n_splits, random_split=True):
+    def __init__(self, df, cfg, random_split=True):
         self.df = df
-        self.feature_columns = feature_columns
-        self.columns_to_display = columns_to_display
-        self.categorical_columns = categorical_columns
-        self.test_size = test_size
-        self.reward_types= reward_types
-        self.n_splits = n_splits
+        self.feature_columns = cfg.setting.feature_columns
+        self.columns_to_display = cfg.setting.columns_to_display
+        self.categorical_columns = cfg.categorical_columns
+        self.test_size = cfg.test_size
+        self.reward_types= cfg.setting.reward_types
+        self.n_splits = cfg.cv_splits
         self.random_split = random_split
         self.scaler = StandardScaler()
         self.onehot_encoder = OneHotEncoder(sparse_output=False, drop=None, handle_unknown='ignore')

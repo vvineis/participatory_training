@@ -9,12 +9,13 @@ from utils.decisions.compromise_functions import MaxIndividualReward
 from utils.metrics.get_metrics import MetricsCalculator
 from hydra.utils import instantiate
 from omegaconf import DictConfig
+from hydra.utils import instantiate
 
 class CrossValidator:
-    def __init__(self, cfg, classifier, regressor, process_train_val_folds):
+    def __init__(self, cfg, process_train_val_folds):
         self.cfg = cfg
-        self.classifier = instantiate(classifier) if isinstance(classifier, DictConfig) else classifier
-        self.regressor = instantiate(regressor) if isinstance(regressor, DictConfig) else regressor
+        self.classifier = instantiate(cfg.models.outcome.classifier) 
+        self.regressor =  instantiate(cfg.models.rewards.regressor) 
         self.process_train_val_folds = process_train_val_folds
         self.param_grid_outcome = dict(cfg.models.outcome.param_grid)
         self.param_grid_reward = dict(cfg.models.rewards.param_grid)
@@ -32,24 +33,11 @@ class CrossValidator:
         self.max_individual_strategy = MaxIndividualReward()
 
         # Instantiate MetricsCalculator and SummaryProcessor with the strategy
-        self.metrics_calculator = MetricsCalculator(
-            cfg.metrics.fairness_metrics,
-            cfg.metrics.standard_metrics,
-            cfg.metrics.case_specific_metrics,
-            self.actions_set,
-            cfg.setting.outcomes_set,
-            cfg.setting.positive_actions_set
-        )
+        self.metrics_calculator = MetricsCalculator(cfg=cfg)
 
         self.summary_processor = SummaryProcessor(
             metrics_calculator=self.metrics_calculator,
-            ranking_criteria=self.ranking_criteria,
-            ranking_weights=self.ranking_weights,
-            metrics_for_evaluation=self.metrics_for_evaluation,
-            reward_types=self.reward_types,
-            decision_criteria_list=self.decision_criteria_list,
-            actions_set=self.actions_set,
-            outcomes_set=cfg.setting.outcomes_set,
+            cfg=cfg, 
             strategy=self.max_individual_strategy
         )
 
@@ -162,14 +150,7 @@ class CrossValidator:
                 outcome_model=best_model_outcome,
                 reward_models=best_models_reward,
                 onehot_encoder=fold_dict['onehot_encoder'],
-                actions_set=self.actions_set,
-                feature_columns=self.feature_columns,
-                categorical_columns=self.categorical_columns,
-                actor_list=self.actor_list,
-                decision_criteria_list=self.decision_criteria_list,
-                ranking_criteria=self.ranking_criteria,
-                ranking_weights=self.ranking_weights,
-                metrics_for_evaluation=self.metrics_for_evaluation
+                cfg=self.cfg
             )
             
             # Get decisions from the decision processor
@@ -177,13 +158,11 @@ class CrossValidator:
 
             # Summarize and rank decision metrics for the current fold
             result = self.summary_processor.process_decision_metrics(
-                actor_list=self.actor_list,
                 y_val_outcome=y_val_outcome,
                 decisions_df=decisions_df,
                 unscaled_X_val_reward=fold_dict['unscaled_val_or_test_set'],
                 expected_rewards_list=all_expected_rewards,
                 clfr_pred_list=all_clsf_pred,
-                positive_attribute_for_fairness=self.positive_attribute_for_fairness
             )
 
             # Store fold results for later aggregation
@@ -231,7 +210,7 @@ class CrossValidator:
         
         # Compute overall decision metrics
         CV_decision_metrics_df = self.summary_processor.metrics_to_dataframe(
-            self.metrics_calculator.compute_all_metrics(CV_summary_df, self.actor_list, self.reward_types, self.decision_criteria_list, self.positive_attribute_for_fairness, true_outcome_col='True Outcome')
+            self.metrics_calculator.compute_all_metrics(CV_summary_df,true_outcome_col='True Outcome')
         )
         
         # Rank and compute weighted sum for overall performance
