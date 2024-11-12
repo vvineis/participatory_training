@@ -1,0 +1,4 @@
+regressor:
+  _target_: sklearn.ensemble.RandomForestRegressor
+  n_estimators: 100  # Default value; can be overridden
+  max_depth: 10      # Default value; can be overridden

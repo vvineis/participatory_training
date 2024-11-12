@@ -1,7 +1,7 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split, KFold
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from rewards.get_rewards import RewardCalculator
+from utils.rewards.get_rewards import RewardCalculator
 
 class DataProcessor:
     def __init__(self, df, feature_columns, columns_to_display, categorical_columns, reward_types, test_size, n_splits, random_split=True):
@@ -40,6 +40,7 @@ class DataProcessor:
         # Process train and validation data for outcome and reward prediction
         train_df = self.scale_features(train_df)
         unscaled_val_or_test_df = val_df[self.columns_to_display].copy()
+        
     
         #print(f"train_df_shape{train_df.shape}")
         val_or_test_df = self.scale_features(val_df, fit=False)
@@ -125,6 +126,7 @@ class DataProcessor:
     def prepare_for_outcome_prediction(self, df):
         X = df[self.feature_columns]
         y = df['Outcome']
+
         return X, y
 
     def prepare_for_reward_prediction(self, df):

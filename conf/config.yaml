@@ -1,0 +1,21 @@
+defaults:
+  - actors: default
+  - context: default
+  - decision_criteria: default
+  - evaluation_criteria: default
+  - metrics/fairness: default
+  - metrics/standard: default
+  - action_outcomes: default
+  - metrics/case_specific: default
+  - models/outcome_classifier: classifier
+  - models/rewards_regressor: regressor
+  - models/param_grid_outcome: param_grid_outcome
+  - models/param_grid_rewards: param_grid_rewards
+  - _self_
+
+
+data_path: data/lending_club_data.csv
+categorical_columns: ['Action', 'Outcome']
+cv_splits: 5
+test_size: 0.2
+sample_size: 1000

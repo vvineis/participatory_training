@@ -1,0 +1,1 @@
+standard_metrics_list : ['Precision', 'Recall', 'F1 Score', 'Accuracy']

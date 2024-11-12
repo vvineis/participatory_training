@@ -1,12 +1,12 @@
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import ParameterGrid
-from models.reward_models import RewardModels
-from models.outcome_model import OutcomeModel
-from decisions.get_decisions import DecisionProcessor
-from decisions.evaluate_decisions import SummaryProcessor
-from decisions.compromise_functions import MaxIndividualReward
-from metrics.get_metrics import MetricsCalculator
+from utils.models.reward_models import RewardModels
+from utils.models.outcome_model import OutcomeModel
+from utils.decisions.get_decisions import DecisionProcessor
+from utils.decisions.evaluate_decisions import SummaryProcessor
+from utils.decisions.compromise_functions import MaxIndividualReward
+from utils.metrics.get_metrics import MetricsCalculator
 
 
 from config import fairness_metrics_list, standard_metrics_list, case_metrics_list, positive_actions_set, actions_set,  outcomes_set, positive_attribute_for_fairness, actor_list

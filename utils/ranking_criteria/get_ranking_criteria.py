@@ -24,5 +24,8 @@ def create_ranking_criteria():
         'Unexploited Profit': 0.
     }
 
-    # Return both the ranking criteria and weights
-    return ranking_criteria, ranking_criteria.keys(), ranking_weights
+    return {
+        "ranking_criteria": ranking_criteria,
+        "metrics_for_evaluation": ranking_criteria.keys(),
+        "ranking_weights": ranking_weights,
+    } 

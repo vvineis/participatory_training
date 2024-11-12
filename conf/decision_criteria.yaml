@@ -1,0 +1,4 @@
+decision_criteria_list : [
+    'Maximin', 'Nash Social Welfare', 'Kalai-Smorodinsky',
+    'Nash Bargaining', 'Compromise Programming', 'Proportional Fairness'
+]

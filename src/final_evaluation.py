@@ -6,12 +6,12 @@ from config import (
     metrics_for_evaluation, ranking_weights, positive_attribute_for_fairness, 
     fairness_metrics_list, standard_metrics_list, case_metrics_list, outcomes_set, classifier, regressor,
 )
-from models.outcome_model import OutcomeModel
-from models.reward_models import RewardModels
-from decisions.get_decisions import DecisionProcessor
-from decisions.evaluate_decisions import SummaryProcessor
-from decisions.compromise_functions import MaxIndividualReward
-from metrics.get_metrics import MetricsCalculator
+from utils.models.outcome_model import OutcomeModel
+from utils.models.reward_models import RewardModels
+from utils.decisions.get_decisions import DecisionProcessor
+from utils.decisions.evaluate_decisions import SummaryProcessor
+from utils.decisions.compromise_functions import MaxIndividualReward
+from utils.metrics.get_metrics import MetricsCalculator
 
 def run_final_evaluation(data_processor, cv_results, all_train_set, test_set):
     # Prepare training and test sets
@@ -32,6 +32,7 @@ def run_final_evaluation(data_processor, cv_results, all_train_set, test_set):
     final_outcome_accuracy = outcome_model.evaluate(X_test_outcome, y_test_outcome)
     print(f"Final Outcome Model Accuracy: {final_outcome_accuracy}")
 
+    final_training_data['unscaled_val_or_test_set'].columns
     # Train final reward models
     reward_model = RewardModels(regressor, **suggested_params_reward)
 

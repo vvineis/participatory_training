@@ -31,8 +31,6 @@ class StandardMetrics:
 
     def get_metrics(self, standard_metrics_list):
         """Compute and return selected metrics based on the provided list."""
-        print("y_pred:", self.y_pred)
-        print("y_true:", self.y_true)
         metric_functions = {
             'Precision': lambda: precision_score(self.y_true, self.y_pred, average='macro', zero_division=0),
             'Recall': lambda: recall_score(self.y_true, self.y_pred, average='macro', zero_division=0),
