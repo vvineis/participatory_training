@@ -1,11 +1,3 @@
-
-
-from config import (
-    actor_list, reward_types, positive_actions_set, actions_set, decision_criteria_list, 
-    feature_columns, columns_to_display, ranking_criteria, categorical_columns,
-    metrics_for_evaluation, ranking_weights, positive_attribute_for_fairness, 
-    fairness_metrics_list, standard_metrics_list, case_metrics_list, outcomes_set, classifier, regressor,
-)
 from utils.models.outcome_model import OutcomeModel
 from utils.models.reward_models import RewardModels
 from utils.decisions.get_decisions import DecisionProcessor
@@ -13,7 +5,7 @@ from utils.decisions.evaluate_decisions import SummaryProcessor
 from utils.decisions.compromise_functions import MaxIndividualReward
 from utils.metrics.get_metrics import MetricsCalculator
 
-def run_final_evaluation(data_processor, cv_results, all_train_set, test_set):
+def run_final_evaluation(data_processor, cv_results, all_train_set, test_set, classifier, regressor, cfg):
     # Prepare training and test sets
     final_training_data = data_processor.prepare_for_training(all_train_set, test_set)
 
@@ -58,14 +50,14 @@ def run_final_evaluation(data_processor, cv_results, all_train_set, test_set):
         outcome_model=final_outcome_model,
         reward_models=final_reward_models,
         onehot_encoder=final_training_data['onehot_encoder'],
-        actions_set=actions_set,
-        feature_columns=feature_columns,
-        categorical_columns=categorical_columns,
-        actor_list=actor_list,
-        decision_criteria_list=decision_criteria_list,
-        ranking_criteria=ranking_criteria,
-        ranking_weights=ranking_weights,
-        metrics_for_evaluation=metrics_for_evaluation
+        actions_set=cfg.setting.actions_set,
+        feature_columns=cfg.setting.feature_columns,
+        categorical_columns=cfg.categorical_columns,
+        actor_list=cfg.setting.actor_list,
+        decision_criteria_list=cfg.criteria.decision_criteria,
+        ranking_criteria=cfg.criteria.ranking_criteria, 
+        ranking_weights=cfg.criteria.ranking_weights,
+        metrics_for_evaluation=cfg.criteria.metrics_for_evaluation
     )
     
     # Get decisions for the test set
@@ -74,34 +66,34 @@ def run_final_evaluation(data_processor, cv_results, all_train_set, test_set):
     # Evaluate final decisions on the test set
     max_individual_strategy = MaxIndividualReward()
     metrics_calculator = MetricsCalculator(
-        fairness_metrics_list=fairness_metrics_list,
-        standard_metrics_list=standard_metrics_list,
-        case_metrics_list=case_metrics_list,
-        actions_set=actions_set,
-        outcomes_set=outcomes_set,
-        positive_actions_set=positive_actions_set
+        fairness_metrics_list=cfg.metrics.fairness_metrics,
+        standard_metrics_list=cfg.metrics.standard_metrics,
+        case_metrics_list=cfg.metrics.case_specific_metrics,
+        actions_set=cfg.setting.actions_set,
+        outcomes_set=cfg.setting.outcomes_set,
+        positive_actions_set=cfg.setting.positive_actions_set
     )
     summary_processor = SummaryProcessor(
         metrics_calculator=metrics_calculator,
-        ranking_criteria=ranking_criteria,
-        ranking_weights=ranking_weights,
-        metrics_for_evaluation=metrics_for_evaluation,
-        reward_types=reward_types,
-        decision_criteria_list=decision_criteria_list,
-        actions_set=actions_set,
-        outcomes_set=outcomes_set,
+        ranking_criteria=cfg.criteria.ranking_criteria,
+        ranking_weights=cfg.criteria.ranking_weights,
+        metrics_for_evaluation=cfg.criteria.metrics_for_evaluation,
+        reward_types=cfg.setting.reward_types,
+        decision_criteria_list=cfg.criteria.decision_criteria,
+        actions_set=cfg.setting.actions_set,
+        outcomes_set=cfg.setting.outcomes_set,
         strategy=max_individual_strategy
     )
 
     # Process metrics on test set
     test_results_dict = summary_processor.process_decision_metrics(
-        actor_list=actor_list,
+        actor_list=cfg.setting.actor_list,
         y_val_outcome=y_test_outcome,
         decisions_df=decisions_df,
         unscaled_X_val_reward=final_training_data['unscaled_val_or_test_set'],
         expected_rewards_list=all_expected_rewards,
         clfr_pred_list=all_clsf_pred,
-        positive_attribute_for_fairness=positive_attribute_for_fairness
+        positive_attribute_for_fairness=cfg.metrics.positive_attribute_for_fairness
     )
 
     print("Final evaluation on test set completed.")

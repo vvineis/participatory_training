@@ -1,0 +1,9 @@
+param_grid:
+  n_estimators:
+    - 50
+    - 100
+    - 150
+  max_depth:
+    - null
+    - 10
+    - 20

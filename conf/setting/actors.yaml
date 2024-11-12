@@ -1,0 +1,11 @@
+actor_list: 
+  - Bank 
+  - Applicant
+  - Regulatory
+  - Oracle
+  - Classifier
+
+reward_types: 
+  - Bank 
+  - Applicant
+  - Regulatory

@@ -1,7 +1,5 @@
 import pandas as pd
 import random
-from utils.decisions.get_decisions import DecisionProcessor
-from utils.metrics.get_metrics import MetricsCalculator
 
 class SummaryProcessor:
     def __init__(self, metrics_calculator, ranking_criteria, ranking_weights, metrics_for_evaluation,
@@ -11,7 +9,7 @@ class SummaryProcessor:
         """
         self.metrics_calculator = metrics_calculator
         self.ranking_criteria = ranking_criteria
-        self.ranking_weights = ranking_weights
+        self.ranking_weights = dict(ranking_weights)
         self.metrics_for_evaluation = metrics_for_evaluation
         self.reward_types = reward_types
         self.decision_criteria_list = decision_criteria_list

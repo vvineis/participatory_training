@@ -1,10 +1,7 @@
-from config import (feature_columns)
+
 import numpy as np
 import pandas as pd
 from utils.decisions.compromise_functions import*
-from utils.metrics.get_metrics import MetricsCalculator
-from config import (fairness_metrics_list, standard_metrics_list, case_metrics_list, positive_actions_set, outcomes_set)
-
 class DecisionProcessor:
     def __init__(self, outcome_model, reward_models, onehot_encoder, actions_set, feature_columns, categorical_columns, 
                  actor_list, decision_criteria_list, ranking_criteria, ranking_weights, metrics_for_evaluation):

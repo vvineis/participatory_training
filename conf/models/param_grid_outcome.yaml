@@ -1,3 +1,0 @@
-param_grid_outcome:
-  n_estimators: [100, 200, 300]
-  max_depth: [null, 10, 20]

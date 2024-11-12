@@ -1,7 +1,4 @@
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
-
-from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
-
 class StandardMetrics:
     def __init__(self, suggestions_df, decision_col, true_outcome_col, actions_set, outcomes_set):
         if decision_col not in suggestions_df.columns or true_outcome_col not in suggestions_df.columns:

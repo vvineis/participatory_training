@@ -1,21 +1,26 @@
 defaults:
-  - actors: default
-  - context: default
-  - decision_criteria: default
-  - evaluation_criteria: default
-  - metrics/fairness: default
-  - metrics/standard: default
-  - action_outcomes: default
-  - metrics/case_specific: default
-  - models/outcome_classifier: classifier
-  - models/rewards_regressor: regressor
-  - models/param_grid_outcome: param_grid_outcome
-  - models/param_grid_rewards: param_grid_rewards
+  - setting/actors
+  - setting/context
+  - setting/actions_outcomes
+  - criteria/decision_criteria
+  - criteria/evaluation_criteria
+  - metrics/fairness
+  - metrics/standard
+  - metrics/case_specific
+  - models/outcome/outcome_classifier
+  - models/rewards/rewards_regressor
+  - models/outcome/param_grid_outcome
+  - models/rewards/param_grid_rewards
   - _self_
 
 
-data_path: data/lending_club_data.csv
-categorical_columns: ['Action', 'Outcome']
-cv_splits: 5
+data_path: 'C:/Users/Vittoria/Documents/GitHub/participatory_training/data/lending_club_data.csv'
+result_path: 'C:/Users/Vittoria/Documents/GitHub/participatory_training/results'
+
+categorical_columns: 
+  - Action
+  - Outcome
+
+cv_splits: 2
 test_size: 0.2
 sample_size: 1000

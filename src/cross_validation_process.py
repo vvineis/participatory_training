@@ -7,47 +7,53 @@ from utils.decisions.get_decisions import DecisionProcessor
 from utils.decisions.evaluate_decisions import SummaryProcessor
 from utils.decisions.compromise_functions import MaxIndividualReward
 from utils.metrics.get_metrics import MetricsCalculator
-
-
-from config import fairness_metrics_list, standard_metrics_list, case_metrics_list, positive_actions_set, actions_set,  outcomes_set, positive_attribute_for_fairness, actor_list
+from hydra.utils import instantiate
+from omegaconf import DictConfig
 
 class CrossValidator:
-    def __init__(self,classifier, regressor, param_grid_outcome, param_grid_reward, n_splits, 
-                 process_train_val_folds, feature_columns, categorical_columns, actions_set, actor_list, reward_types,
-                 decision_criteria_list, ranking_criteria, ranking_weights, metrics_for_evaluation, positive_attribute_for_fairness):
-        self.classifier = classifier
-        self.regressor=regressor
-        self.param_grid_outcome = param_grid_outcome
-        self.param_grid_reward = param_grid_reward
-        self.n_splits = n_splits
+    def __init__(self, cfg, classifier, regressor, process_train_val_folds):
+        self.cfg = cfg
+        self.classifier = instantiate(classifier) if isinstance(classifier, DictConfig) else classifier
+        self.regressor = instantiate(regressor) if isinstance(regressor, DictConfig) else regressor
         self.process_train_val_folds = process_train_val_folds
-        self.feature_columns= feature_columns
-        self.categorical_columns= categorical_columns
-        self.actions_set = actions_set
-        self.actor_list = actor_list
-        self.reward_types= reward_types
-        self.decision_criteria_list = decision_criteria_list
-        self.ranking_criteria = ranking_criteria
-        self.ranking_weights = ranking_weights
-        self.metrics_for_evaluation = metrics_for_evaluation
-        self.positive_attribute_for_fairness=positive_attribute_for_fairness
+        self.param_grid_outcome = dict(cfg.models.outcome.param_grid)
+        self.param_grid_reward = dict(cfg.models.rewards.param_grid)
+        self.n_splits = cfg.cv_splits
+        self.feature_columns = cfg.setting.feature_columns
+        self.categorical_columns = cfg.categorical_columns
+        self.actions_set = cfg.setting.actions_set
+        self.actor_list = cfg.setting.actor_list
+        self.reward_types = cfg.setting.reward_types
+        self.decision_criteria_list = cfg.criteria.decision_criteria
+        self.ranking_criteria = cfg.criteria.ranking_criteria
+        self.ranking_weights = cfg.criteria.ranking_weights
+        self.metrics_for_evaluation = cfg.criteria.metrics_for_evaluation
+        self.positive_attribute_for_fairness = cfg.metrics.positive_attribute_for_fairness
         self.max_individual_strategy = MaxIndividualReward()
 
         # Instantiate MetricsCalculator and SummaryProcessor with the strategy
-        self.metrics_calculator = MetricsCalculator(fairness_metrics_list, standard_metrics_list, case_metrics_list, actions_set, outcomes_set, positive_actions_set)
-        self.summary_processor = SummaryProcessor(
-                metrics_calculator=self.metrics_calculator,
-                ranking_criteria=self.ranking_criteria,
-                ranking_weights=self.ranking_weights,
-                metrics_for_evaluation=self.metrics_for_evaluation,
-                reward_types=self.reward_types,
-                decision_criteria_list=self.decision_criteria_list,
-                actions_set=actions_set,
-                outcomes_set=outcomes_set,
-                strategy=self.max_individual_strategy  
-            )
+        self.metrics_calculator = MetricsCalculator(
+            cfg.metrics.fairness_metrics,
+            cfg.metrics.standard_metrics,
+            cfg.metrics.case_specific_metrics,
+            self.actions_set,
+            cfg.setting.outcomes_set,
+            cfg.setting.positive_actions_set
+        )
 
-        # To store results for each fold
+        self.summary_processor = SummaryProcessor(
+            metrics_calculator=self.metrics_calculator,
+            ranking_criteria=self.ranking_criteria,
+            ranking_weights=self.ranking_weights,
+            metrics_for_evaluation=self.metrics_for_evaluation,
+            reward_types=self.reward_types,
+            decision_criteria_list=self.decision_criteria_list,
+            actions_set=self.actions_set,
+            outcomes_set=cfg.setting.outcomes_set,
+            strategy=self.max_individual_strategy
+        )
+
+        # Store results for each fold
         self.best_hyperparams_outcome_per_fold = []
         self.best_hyperparams_reward_per_fold = []
         self.best_outcome_models_per_fold = []
@@ -131,7 +137,7 @@ class CrossValidator:
             X_val_outcome, y_val_outcome = fold_dict['val_or_test_outcome']
             X_train_reward, y_train_bank, y_train_applicant, y_train_regulatory = fold_dict['train_reward']
             X_val_reward, y_val_bank, y_val_applicant, y_val_regulatory = fold_dict['val_or_test_reward']
-            print(f'y_val_outcome: {y_val_outcome}')
+
 
             # Tune outcome model
             best_params_outcome, best_model_outcome, best_score_outcome = self.tune_outcome_model(

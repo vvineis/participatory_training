@@ -1,17 +1,13 @@
 
-
 from sklearn.metrics import mean_squared_error
-
+from sklearn.base import clone
 
 class RewardModels:
-    def __init__(self, regressor_class, model_random_state=42, **regressor_params):
-
-        # Initialize separate models for each reward component
-        if 'random_state' in regressor_class().get_params():
-            regressor_params['random_state'] = model_random_state
-        self.bank_regressor = regressor_class(**regressor_params)
-        self.applicant_regressor = regressor_class(**regressor_params)
-        self.regulatory_regressor = regressor_class(**regressor_params)
+    def __init__(self, regressor_class, **regressor_params):
+        # Assume regressor_class is already an instantiated model
+        self.bank_regressor = clone(regressor_class).set_params(**regressor_params)
+        self.applicant_regressor = clone(regressor_class).set_params(**regressor_params)
+        self.regulatory_regressor = clone(regressor_class).set_params(**regressor_params)
 
     def train(self, X_train, y_train_bank, y_train_applicant, y_train_regulatory):
 
@@ -41,9 +37,9 @@ class RewardModels:
         mse_applicant = mean_squared_error(y_val_applicant, y_pred_val_applicant)
         mse_regulatory = mean_squared_error(y_val_regulatory, y_pred_val_regulatory)
 
-       # print(f"Bank Reward Prediction MSE (Validation Set): {mse_bank:.4f}")
-       # print(f"Applicant Reward Prediction MSE (Validation Set): {mse_applicant:.4f}")
-       # print(f"Regulatory Reward Prediction MSE (Validation Set): {mse_regulatory:.4f}")
+        print(f"Bank Reward Prediction MSE (Validation Set): {mse_bank:.4f}")
+        print(f"Applicant Reward Prediction MSE (Validation Set): {mse_applicant:.4f}")
+        print(f"Regulatory Reward Prediction MSE (Validation Set): {mse_regulatory:.4f}")
 
         return {
             'bank_mse': mse_bank,

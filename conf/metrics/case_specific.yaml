@@ -1,2 +1,5 @@
-case_metrics_list: [ 'Total Profit',  'Total Loss', 'Unexploited Profit']
+case_specific_metrics: 
+  - Total Profit
+  - Total Loss
+  - Unexploited Profit
 

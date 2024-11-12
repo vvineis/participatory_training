@@ -1,0 +1,7 @@
+decision_criteria : 
+    - Maximin
+    - Nash Social Welfare
+    - Kalai-Smorodinsky
+    - Nash Bargaining
+    - Compromise Programming
+    - Proportional Fairness

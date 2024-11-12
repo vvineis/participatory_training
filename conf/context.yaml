@@ -1,2 +1,0 @@
-feature_columns : ['Income', 'Credit Score', 'Loan Amount', 'Interest Rate']
-columns_to_display : ['Income', 'Credit Score', 'Loan Amount', 'Interest Rate', 'Applicant Type', 'Recoveries']

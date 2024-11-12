@@ -1,2 +1,0 @@
-criteria:
-  _target_: ranking_criteria.get_ranking_criteria.create_ranking_criteria

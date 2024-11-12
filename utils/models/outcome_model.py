@@ -2,9 +2,6 @@ from imblearn.over_sampling import SMOTE
 from sklearn.metrics import accuracy_score
 import pandas as pd
 
-from sklearn.metrics import accuracy_score
-from imblearn.over_sampling import SMOTE
-
 class OutcomeModel:
     def __init__(self, classifier, use_smote=True, smote_k_neighbors=1, smote_random_state=42,  model_random_state=111):
         self.classifier = classifier

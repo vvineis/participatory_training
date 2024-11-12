@@ -1,3 +1,0 @@
-actions_set: ['Grant', 'Grant lower','Not Grant' ]
-positive_actions_set : ['Grant','Grant lower']
-outcomes_set : ['Fully Repaid', 'Partially Repaid', 'Not Repaid'] 
