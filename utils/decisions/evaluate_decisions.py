@@ -16,6 +16,7 @@ class SummaryProcessor:
         self.outcomes_set = cfg.setting.outcomes_set
         self.strategy = strategy  # Use the provided strategy for computing actions
         self.seed = seed
+        self.mapping=cfg.setting.mapping
         if self.seed is not None:
             random.seed(self.seed)
 
@@ -53,13 +54,19 @@ class SummaryProcessor:
 
 
         return summary_df
-
+    
     def _map_outcome_to_action(self, outcome):
-        """Map outcomes to corresponding actions for oracle and classifier suggestions."""
-        return {
-            'Fully Repaid': 'Grant',
-            'Not Repaid': 'Not Grant'
-        }.get(outcome, 'Grant lower')
+        """
+        Map outcomes to corresponding actions based on a configuration.
+
+        Args:
+            outcome (str): The outcome to map.
+            mapping (dict): The mapping configuration.
+
+        Returns:
+            str: The corresponding action.
+        """
+        return self.mapping.get(outcome, self.mapping.get('default', 'Grant lower'))
     
     def _get_random_action(self):
         """Select a random action from the actions set."""

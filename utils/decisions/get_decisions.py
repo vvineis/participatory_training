@@ -9,53 +9,58 @@ class DecisionProcessor:
         self.onehot_encoder = onehot_encoder
         self.cfg = cfg
 
+    def encode_features(self, feature_context):
+        """
+        Encode numerical and categorical features.
+        """
+        feature_columns = self.cfg.setting.feature_columns
+        categorical_columns = self.cfg.categorical_columns
+
+        numerical_features = feature_context[feature_columns]
+        categorical_features = feature_context[categorical_columns]
+        categorical_encoded = self.onehot_encoder.transform(categorical_features)
+        
+        # Combine encoded categorical and numerical features
+        encoded_feature_names = list(numerical_features.columns) + list(
+            self.onehot_encoder.get_feature_names_out(categorical_columns)
+        )
+        context_encoded = np.concatenate([numerical_features.values, categorical_encoded], axis=1)
+        
+        return pd.DataFrame(context_encoded, columns=encoded_feature_names)
+
     def compute_expected_reward(self, feature_context):
+        """
+        Compute expected rewards for all actors and actions.
+        """
         feature_columns = self.cfg.setting.feature_columns
         feature_context = feature_context[feature_columns]
 
         # Predict probabilities for each possible outcome
         outcome_probs = self.outcome_model.predict_proba(feature_context)
         outcome_classes = self.outcome_model.classes_
-
-        expected_rewards = {actor: {} for actor in ['Bank', 'Applicant', 'Regulatory']}
         predicted_class_list = [outcome_classes[np.argmax(prob)] for prob in outcome_probs]
 
-        # Calculate expected rewards for each action
+        expected_rewards = {actor: {} for actor in self.reward_models.keys()}
         actions_set = self.cfg.setting.actions_set
-        categorical_columns = self.cfg.categorical_columns
 
         for action in actions_set:
-            reward_sum_bank, reward_sum_applicant, reward_sum_regulatory = 0, 0, 0
-
             for idx, outcome in enumerate(outcome_classes):
                 context_with_action_outcome = feature_context.copy()
                 context_with_action_outcome['Action'] = action
                 context_with_action_outcome['Outcome'] = outcome
-
+                
                 # Encode features
-                numerical_features = context_with_action_outcome[feature_columns]
-                categorical_features = context_with_action_outcome[categorical_columns]
-                categorical_encoded = self.onehot_encoder.transform(categorical_features)
-                context_encoded = np.concatenate([numerical_features.values, categorical_encoded], axis=1)
+                context_encoded_df = self.encode_features(context_with_action_outcome)
 
-                # Convert to DataFrame with column names
-                encoded_feature_names = list(numerical_features.columns) + list(self.onehot_encoder.get_feature_names_out(categorical_columns))
-                context_encoded_df = pd.DataFrame(context_encoded, columns=encoded_feature_names)
+                # Compute rewards for each actor
+                for actor, model in self.reward_models.items():
+                    reward = model.predict(context_encoded_df)[0]
+                    outcome_prob = outcome_probs[0][idx]
 
-                # Predict rewards
-                bank_reward = self.reward_models[0].predict(context_encoded_df)[0]
-                applicant_reward = self.reward_models[1].predict(context_encoded_df)[0]
-                regulatory_reward = self.reward_models[2].predict(context_encoded_df)[0]
-
-                # Aggregate rewards weighted by outcome probabilities
-                outcome_prob = outcome_probs[0][idx]
-                reward_sum_bank += outcome_prob * bank_reward
-                reward_sum_applicant += outcome_prob * applicant_reward
-                reward_sum_regulatory += outcome_prob * regulatory_reward
-
-            expected_rewards['Bank'][action] = reward_sum_bank
-            expected_rewards['Applicant'][action] = reward_sum_applicant
-            expected_rewards['Regulatory'][action] = reward_sum_regulatory
+                    # Aggregate expected rewards
+                    if action not in expected_rewards[actor]:
+                        expected_rewards[actor][action] = 0
+                    expected_rewards[actor][action] += outcome_prob * reward
 
         return expected_rewards, predicted_class_list
 

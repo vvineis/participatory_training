@@ -85,8 +85,36 @@ class CrossValidator:
             if score > best_score:
                 best_score, best_params, best_model = score, params, model
         return best_params, best_model, best_score
+    
+    def tune_reward_models(self, X_train, y_train_rewards, X_val, y_val_rewards):
+        best_params, best_models, best_score = None, {}, float('inf')
 
-    def tune_reward_models(self, X_train, y_train_bank, y_train_applicant, y_train_regulatory, 
+        # Iterate through all parameter combinations in the grid
+        for params in ParameterGrid(self.param_grid_reward):
+            print(f"Trying parameters for reward model: {params}")
+            
+            # Initialize reward models dynamically
+            self.reward_model = RewardModels(self.regressor, self.reward_types, **params)
+            
+            # Train reward models
+            trained_models = self.reward_model.train(X_train, y_train_rewards)
+            
+            # Evaluate reward models
+            scores = self.reward_model.evaluate(X_val, y_val_rewards)
+            
+            # Calculate average MSE across all reward types
+            avg_mse = sum(scores[f"{reward_type}_mse"] for reward_type in self.reward_types) / len(self.reward_types)
+            
+            # Update the best parameters, models, and score if the current average MSE is better
+            if avg_mse < best_score:
+                best_score = avg_mse
+                best_params = params
+                best_models = trained_models
+
+        return best_params, best_models, best_score
+
+
+    '''def tune_reward_models(self, X_train, y_train_bank, y_train_applicant, y_train_regulatory, 
                            X_val, y_val_bank, y_val_applicant, y_val_regulatory):
         best_params, best_models, best_score = None, None, float('inf')
         for params in ParameterGrid(self.param_grid_reward):
@@ -106,7 +134,7 @@ class CrossValidator:
             if avg_mse < best_score:
                 best_score, best_params, best_models = avg_mse, params, (bank_model, applicant_model, regulatory_model)
 
-        return best_params, best_models, best_score
+        return best_params, best_models, best_score'''
     
     def run(self):
         # List to store summary data for aggregation across folds
@@ -123,8 +151,11 @@ class CrossValidator:
             # Unpack train and validation sets for the fold
             X_train_outcome, y_train_outcome = fold_dict['train_outcome']
             X_val_outcome, y_val_outcome = fold_dict['val_or_test_outcome']
-            X_train_reward, y_train_bank, y_train_applicant, y_train_regulatory = fold_dict['train_reward']
-            X_val_reward, y_val_bank, y_val_applicant, y_val_regulatory = fold_dict['val_or_test_reward']
+           # X_train_reward, y_train_bank, y_train_applicant, y_train_regulatory = fold_dict['train_reward']
+           # X_val_reward, y_val_bank, y_val_applicant, y_val_regulatory = fold_dict['val_or_test_reward']
+            # Access rewards as dictionaries
+            X_train_reward, y_train_rewards = fold_dict['train_reward']
+            X_val_reward, y_val_rewards = fold_dict['val_or_test_reward']
 
 
             # Tune outcome model
@@ -136,10 +167,15 @@ class CrossValidator:
             self.fold_scores_outcome.append(best_score_outcome)
 
             # Tune reward models
+            # Tune reward models
             best_params_reward, best_models_reward, best_score_reward = self.tune_reward_models(
-                X_train_reward, y_train_bank, y_train_applicant, y_train_regulatory,
-                X_val_reward, y_val_bank, y_val_applicant, y_val_regulatory
+                X_train_reward, y_train_rewards, X_val_reward, y_val_rewards
             )
+            
+            #best_params_reward, best_models_reward, best_score_reward = self.tune_reward_models(
+               # X_train_reward, y_train_bank, y_train_applicant, y_train_regulatory,
+               # X_val_reward, y_val_bank, y_val_applicant, y_val_regulatory
+            #)
             self.best_hyperparams_reward_per_fold.append(best_params_reward)
             self.best_reward_models_per_fold.append(best_models_reward)
             self.fold_scores_reward.append(best_score_reward)

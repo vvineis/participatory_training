@@ -4,6 +4,7 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from utils.rewards.get_rewards import RewardCalculator
 
 
+
 class DataProcessor:
     def __init__(self, df, cfg, random_split=True):
         self.df = df
@@ -18,6 +19,8 @@ class DataProcessor:
         self.onehot_encoder = OneHotEncoder(sparse_output=False, drop=None, handle_unknown='ignore')
         self._split_data()
         self.reward_calculator = RewardCalculator(self.reward_types)
+        self.augmentation_strategy = cfg.setting.augmentation_strategy  
+        self.augmentation_params = cfg.setting.augmentation_parameters.get(self.augmentation_strategy, {})
 
 
     def _split_data(self):
@@ -75,8 +78,8 @@ class DataProcessor:
         dict_for_training = {
             'train_outcome': (X_train_outcome, y_train_outcome),
             'val_or_test_outcome': (X_val_or_test_outcome, y_val_or_test_outcome),
-            'train_reward': (X_train_reward_combined, *y_train_rewards.values()),
-            'val_or_test_reward': (X_val_or_test_reward_combined, *y_val_or_test_rewards.values()),
+            'train_reward': (X_train_reward_combined, y_train_rewards), #*y_train_rewards.values()),
+            'val_or_test_reward': (X_val_or_test_reward_combined, y_val_or_test_rewards), #*y_val_or_test_rewards.values()),
             'val_or_test_set': val_or_test_df,
             'unscaled_val_or_test_set': unscaled_val_or_test_df,
             'scaler': self.scaler,
@@ -108,20 +111,46 @@ class DataProcessor:
         X_val_encoded = pd.DataFrame(X_val_encoded, columns=encoded_feature_names, index=val_df.index)
 
         return X_train_encoded, X_val_encoded
-
+    
     def augment_train_for_reward(self, df):
+        """
+        Augment training data for reward calculation based on the selected strategy.
+        """
         augmented_rows = []
-        for _, row in df.iterrows():
-            augmented_rows.append(row.copy())
-            duplicated_row = row.copy()
-            duplicated_row['Action'] = 'Not Grant'
-            rewards = self.reward_calculator.get_rewards(
-                duplicated_row['Action'], duplicated_row['Outcome'],
-                duplicated_row['Applicant Type'], duplicated_row['Loan Amount'], duplicated_row['Interest Rate']
-            )
-            for reward_type, reward_value in zip(self.reward_types, rewards):
-                        duplicated_row[f'{reward_type}_reward'] = reward_value
-                        augmented_rows.append(duplicated_row)
+        if self.augmentation_strategy == "default":
+            for _, row in df.iterrows():
+                augmented_rows.append(row.copy())
+                duplicated_row = row.copy()
+                # Use config-defined action to duplicate
+                action_to_duplicate = self.augmentation_params.get("action", "Not Grant")
+                duplicated_row['Action'] = action_to_duplicate
+
+                # Extract additional arguments dynamically
+                additional_arguments = [
+                    duplicated_row[arg] for arg in self.augmentation_params.get("additional_arguments", [])
+                ]
+
+                # Calculate rewards
+                rewards = self.reward_calculator.get_rewards(
+                    duplicated_row['Action'], duplicated_row['Outcome'], *additional_arguments
+                )
+                for reward_type, reward_value in zip(self.reward_types, rewards):
+                    duplicated_row[f'{reward_type}_reward'] = reward_value
+                    augmented_rows.append(duplicated_row)
+        #elif self.augmentation_strategy == "alternate": #### ADD HERE ALTERNATIVE STRATEGY TO GET THE AUGMENTED DF FOR REWARDS IF NEEDED
+           # for _, row in df.iterrows():
+                #duplicated_row = row.copy()
+                # Example alternate logic
+                #duplicated_row['Action'] = self.augmentation_params.get("action", "Custom Action")
+                #rewards = self.reward_calculator.get_rewards(
+                    #duplicated_row['Action'], duplicated_row['Outcome']
+                #)
+                #for reward_type, reward_value in zip(self.reward_types, rewards):
+                    #duplicated_row[f'{reward_type}_custom_reward'] = reward_value
+                #augmented_rows.append(duplicated_row)
+        else:
+            raise ValueError(f"Unknown augmentation strategy: {self.augmentation_strategy}")
+        
         return pd.DataFrame(augmented_rows).reset_index(drop=True)
 
     def prepare_for_outcome_prediction(self, df):

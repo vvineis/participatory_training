@@ -2,47 +2,45 @@
 from sklearn.metrics import mean_squared_error
 from sklearn.base import clone
 
+from sklearn.base import clone
+from sklearn.metrics import mean_squared_error
+
 class RewardModels:
-    def __init__(self, regressor_class, **regressor_params):
-        # Assume regressor_class is already an instantiated model
-        self.bank_regressor = clone(regressor_class).set_params(**regressor_params)
-        self.applicant_regressor = clone(regressor_class).set_params(**regressor_params)
-        self.regulatory_regressor = clone(regressor_class).set_params(**regressor_params)
+    def __init__(self, regressor_class, reward_types, **regressor_params):
+        """
+        Initialize reward models dynamically for the specified reward types.
 
-    def train(self, X_train, y_train_bank, y_train_applicant, y_train_regulatory):
+        Args:
+            regressor_class: Regressor class to use for models.
+            reward_types: List of reward types (e.g., ['Bank', 'Applicant', 'Regulatory']).
+            regressor_params: Parameters for the regressor.
+        """
+        self.reward_types = reward_types
+        self.regressors = {
+            reward_type: clone(regressor_class).set_params(**regressor_params)
+            for reward_type in reward_types
+        }
 
-
+    def train(self, X_train, y_train_rewards):
         # Ensure feature names are strings
         X_train.columns = X_train.columns.astype(str)
 
+        trained_models = {}
+        for reward_type, regressor in self.regressors.items():
+            regressor.fit(X_train, y_train_rewards[reward_type])
+            trained_models[reward_type] = regressor
 
-        # Train each reward model
-        self.bank_regressor.fit(X_train, y_train_bank)
-        self.applicant_regressor.fit(X_train, y_train_applicant)
-        self.regulatory_regressor.fit(X_train, y_train_regulatory)
+        return trained_models
 
-        return self.bank_regressor, self.applicant_regressor, self.regulatory_regressor
-
-    def evaluate(self, X_val, y_val_bank, y_val_applicant, y_val_regulatory):
-
+    def evaluate(self, X_val, y_val_rewards):
         # Ensure feature names are strings
         X_val.columns = X_val.columns.astype(str)
 
-        # Predict and calculate MSE for each reward model
-        y_pred_val_bank = self.bank_regressor.predict(X_val)
-        y_pred_val_applicant = self.applicant_regressor.predict(X_val)
-        y_pred_val_regulatory = self.regulatory_regressor.predict(X_val)
-
-        mse_bank = mean_squared_error(y_val_bank, y_pred_val_bank)
-        mse_applicant = mean_squared_error(y_val_applicant, y_pred_val_applicant)
-        mse_regulatory = mean_squared_error(y_val_regulatory, y_pred_val_regulatory)
-
-        print(f"Bank Reward Prediction MSE (Validation Set): {mse_bank:.4f}")
-        print(f"Applicant Reward Prediction MSE (Validation Set): {mse_applicant:.4f}")
-        print(f"Regulatory Reward Prediction MSE (Validation Set): {mse_regulatory:.4f}")
-
-        return {
-            'bank_mse': mse_bank,
-            'applicant_mse': mse_applicant,
-            'regulatory_mse': mse_regulatory
-        }
+        mse_scores = {}
+        for reward_type, regressor in self.regressors.items():
+            y_pred_val = regressor.predict(X_val)
+            mse_scores[f"{reward_type}_mse"] = mean_squared_error(y_val_rewards[reward_type], y_pred_val)
+        
+        print(mse_scores)
+    
+        return mse_scores

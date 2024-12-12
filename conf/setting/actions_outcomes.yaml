@@ -11,3 +11,8 @@ outcomes_set:
   - Fully Repaid
   - Partially Repaid
   - Not Repaid
+
+mapping:
+  Fully Repaid: Grant
+  Not Repaid: Not Grant
+  default: Grant lower

@@ -1,0 +1,9 @@
+augmentation_strategy: "default"  # Choose between "default" or "alternate"
+
+augmentation_parameters:
+  default:
+    action: "Not Grant"
+    additional_arguments: ["Applicant Type", "Loan Amount", "Interest Rate"]
+  alternate:
+    action: "Custom Action"
+ 

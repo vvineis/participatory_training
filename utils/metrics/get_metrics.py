@@ -1,8 +1,27 @@
 from utils.metrics.standard_metrics import StandardMetrics
 from utils.metrics.fairness_metrics import FairnessMetrics
-from utils.metrics.case_specific_metrics import CaseMetrics
+#from utils.metrics.case_specific_metrics import CaseMetrics
 from utils.metrics.real_payoffs import RealPayoffMetrics
 from utils.rewards.get_rewards import RewardCalculator
+import importlib
+
+def load_case_metrics_module(cfg):
+    """
+    Dynamically load the case-specific metrics module specified in the configuration.
+
+    Args:
+        cfg: Configuration object.
+
+    Returns:
+        Module: The case-specific metrics module.
+    """
+    module_path = cfg.case_specific_metrics_module
+    try:
+        module = importlib.import_module(module_path)
+        return module
+    except ImportError as e:
+        raise ImportError(f"Failed to import case-specific metrics module: {module_path}") from e
+
 
 class MetricsCalculator:
     def __init__(self, cfg):
@@ -38,6 +57,15 @@ class MetricsCalculator:
                 action_counts_cache[decision_col] = suggestions_df[decision_col].value_counts(normalize=True).to_dict()
 
             # Actor-Specific Metrics
+            # Load the module dynamically
+            case_metrics_module = load_case_metrics_module(self.cfg)
+
+            # Access the CaseMetrics class
+            CaseMetrics = getattr(case_metrics_module, "CaseMetrics", None)
+            if CaseMetrics is None:
+                raise AttributeError("CaseMetrics class not found in the specified module.")
+
+            # Instantiate the class
             actor_metrics_calculator = CaseMetrics(suggestions_df, decision_col, true_outcome_col)
             for metric in self.cfg.metrics.case_specific_metrics:
                 if metric == 'Total Profit':

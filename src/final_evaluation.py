@@ -8,12 +8,14 @@ from hydra.utils import instantiate
 
 def run_final_evaluation(data_processor, cv_results, all_train_set, test_set, cfg):
     # Prepare training and test sets
+    reward_types= cfg.setting.reward_types
     final_training_data = data_processor.prepare_for_training(all_train_set, test_set)
 
     X_train_outcome, y_train_outcome = final_training_data['train_outcome']
     X_test_outcome, y_test_outcome = final_training_data['val_or_test_outcome']
-    X_train_reward, y_train_bank, y_train_applicant, y_train_regulatory = final_training_data['train_reward']
-    X_test_reward, y_test_bank, y_test_applicant, y_test_regulatory = final_training_data['val_or_test_reward']
+
+    X_train_reward, y_train_rewards = final_training_data['train_reward']
+    X_test_reward, y_test_rewards = final_training_data['val_or_test_reward']
 
     # Suggested hyperparameters from cross-validation
     suggested_params_outcome = cv_results['suggested_params_outcome']
@@ -27,24 +29,22 @@ def run_final_evaluation(data_processor, cv_results, all_train_set, test_set, cf
 
     final_training_data['unscaled_val_or_test_set'].columns
     # Train final reward models
-    reward_model = RewardModels(instantiate(cfg.models.rewards.regressor), **suggested_params_reward)
+    reward_model = RewardModels(instantiate(cfg.models.rewards.regressor), reward_types, **suggested_params_reward)
 
-    # Train the models
     final_reward_models = reward_model.train(
-        X_train_reward, y_train_bank, y_train_applicant, y_train_regulatory
-    )
+        X_train_reward, y_train_rewards)
 
     # Evaluate the models on the test set
     mse_results = reward_model.evaluate(
-        X_test_reward, y_test_bank, y_test_applicant, y_test_regulatory
-    )
+        X_test_reward, y_test_rewards)
+    
+    mse_values = {actor: mse_results.get(f"{actor}_mse", "MSE not found") for actor in reward_types}
 
-    # Extract individual MSEs
-    mse_bank = mse_results['bank_mse']
-    mse_applicant = mse_results['applicant_mse']
-    mse_regulatory = mse_results['regulatory_mse']
+    # Print evaluation metrics
+    print("Final Reward Models MSE:")
+    for actor, mse in mse_values.items():
+        print(f"{actor}: {mse}")
 
-    print(f"Final Reward Models MSE: Bank: {mse_bank}, Applicant: {mse_applicant}, Regulatory: {mse_regulatory}")
     
     # Process test set using final models
     decision_processor = DecisionProcessor(

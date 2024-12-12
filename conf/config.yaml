@@ -2,6 +2,7 @@ defaults:
   - setting/actors
   - setting/context
   - setting/actions_outcomes
+  - setting/augmentation_for_rewards
   - criteria/decision_criteria
   - criteria/evaluation_criteria
   - metrics/fairness
@@ -11,11 +12,14 @@ defaults:
   - models/rewards/rewards_regressor
   - models/outcome/param_grid_outcome
   - models/rewards/param_grid_rewards
+  
   - _self_
 
 
 data_path: 'C:/Users/Vittoria/Documents/GitHub/participatory_training/data/lending_club_data.csv'
 result_path: 'C:/Users/Vittoria/Documents/GitHub/participatory_training/results'
+
+case_specific_metrics_module: utils.metrics.case_specific_metrics
 
 categorical_columns: 
   - Action
