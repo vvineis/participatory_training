@@ -48,6 +48,7 @@ reward_calculator:
 
 models:
   outcome: 
+    model_type: regression
     model_class: CausalOutcomeModel
     learner:
       _target_: xgboost.XGBRegressor

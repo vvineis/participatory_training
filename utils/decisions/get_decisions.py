@@ -8,27 +8,98 @@ class DecisionProcessor:
         self.reward_models = reward_models
         self.onehot_encoder = onehot_encoder
         self.cfg = cfg
+        self.model_type = cfg.models.outcome.model_type
+        print(f"Outcome model: {self.outcome_model}")
+        print(f'model type: {self.model_type}')
+        if self.model_type == 'classification':
+            assert hasattr(self.outcome_model.classifier, "predict_proba"), \
+                "The underlying classifier must support `predict_proba` for classification."
 
     def encode_features(self, feature_context):
         """
-        Encode numerical and categorical features.
+        Encode numerical and categorical features, handling missing Outcome column.
         """
         feature_columns = self.cfg.context.feature_columns
         categorical_columns = self.cfg.categorical_columns
 
+        # Exclude 'Outcome' if not in the DataFrame
+        available_categorical_columns = [col for col in categorical_columns if col in feature_context.columns]
+
         numerical_features = feature_context[feature_columns]
-        categorical_features = feature_context[categorical_columns]
-        categorical_encoded = self.onehot_encoder.transform(categorical_features)
-        
-        # Combine encoded categorical and numerical features
-        encoded_feature_names = list(numerical_features.columns) + list(
-            self.onehot_encoder.get_feature_names_out(categorical_columns)
-        )
-        context_encoded = np.concatenate([numerical_features.values, categorical_encoded], axis=1)
-        
+        categorical_features = feature_context[available_categorical_columns]
+
+        if not categorical_features.empty:
+            categorical_encoded = self.onehot_encoder.transform(categorical_features)
+            encoded_feature_names = list(numerical_features.columns) + list(
+                self.onehot_encoder.get_feature_names_out(available_categorical_columns)
+            )
+            context_encoded = np.concatenate([numerical_features.values, categorical_encoded], axis=1)
+        else:
+            # If no categorical features available, use only numerical features
+            encoded_feature_names = list(numerical_features.columns)
+            context_encoded = numerical_features.values
+
         return pd.DataFrame(context_encoded, columns=encoded_feature_names)
 
+    
     def compute_expected_reward(self, feature_context):
+        """
+        Compute expected rewards for all actors and actions based on model type.
+        """
+        feature_columns = self.cfg.context.feature_columns
+        feature_context = feature_context[feature_columns]
+
+        actions_set = self.cfg.actions_outcomes.actions_set
+        expected_rewards = {actor: {} for actor in self.reward_models.keys()}
+        predicted_class_list = []
+
+        # Classification Case
+        if self.model_type == 'classification':
+            outcome_probs = self.outcome_model.classifier.predict_proba(feature_context)
+            outcome_classes = self.outcome_model.classifier.classes_
+            predicted_class_list = [outcome_classes[np.argmax(prob)] for prob in outcome_probs]
+
+            for action in actions_set:
+                for idx, outcome in enumerate(outcome_classes):
+                    context_with_action_outcome = feature_context.copy()
+                    context_with_action_outcome['Action'] = action
+                    context_with_action_outcome['Outcome'] = outcome
+
+                    context_encoded_df = self.encode_features(context_with_action_outcome)
+
+                    for actor, model in self.reward_models.items():
+                        reward = model.predict(context_encoded_df)[0]
+                        outcome_prob = outcome_probs[0][idx]
+
+                        # Aggregate expected rewards
+                        if action not in expected_rewards[actor]:
+                            expected_rewards[actor][action] = 0
+                        expected_rewards[actor][action] += outcome_prob * reward
+
+        # Regression Case
+        elif self.model_type == 'regression':
+            predicted_outcome = self.outcome_model.predict(feature_context)
+            print(predicted_outcome)
+            for action in actions_set:
+                context_with_action = feature_context.copy()
+
+                # Predict continuous outcome
+                
+                context_with_action['Action'] = action
+                context_with_action['Outcome'] = outcome
+                context_encoded_df_whole = self.encode_features(context_with_action)
+
+                for actor, model in self.reward_models.items():
+                    reward = model.predict(context_encoded_df_whole)[0]
+
+                    # Aggregate expected rewards (predicted_outcome as expected outcome)
+                    if action not in expected_rewards[actor]:
+                        expected_rewards[actor][action] = 0
+                    expected_rewards[actor][action] += predicted_outcome * reward
+
+        return expected_rewards, predicted_class_list
+
+    '''def compute_expected_reward(self, feature_context):
         """
         Compute expected rewards for all actors and actions.
         """
@@ -62,7 +133,7 @@ class DecisionProcessor:
                         expected_rewards[actor][action] = 0
                     expected_rewards[actor][action] += outcome_prob * reward
 
-        return expected_rewards, predicted_class_list
+        return expected_rewards, predicted_class_list'''
 
     def get_decisions(self, X_val_or_test_reward):
         all_expected_rewards = []

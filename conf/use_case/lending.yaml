@@ -49,13 +49,14 @@ reward_calculator:
 
 models:
   outcome:
+    model_type: classification
     model_class: OutcomeModel
     classifier:
       _target_: sklearn.ensemble.RandomForestClassifier
     param_grid:
       n_estimators: [100, 200, 300]
       max_depth: [null, 10, 20]
-      
+
   rewards:
     regressor:
       _target_: sklearn.ensemble.RandomForestRegressor

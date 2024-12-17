@@ -11,6 +11,7 @@ from hydra.utils import instantiate
 from omegaconf import DictConfig
 from hydra.utils import instantiate
 from importlib import import_module
+import logging
 
 class CrossValidator:
     def __init__(self, cfg, process_train_val_folds):
@@ -98,34 +99,43 @@ class CrossValidator:
         """
         Tune the outcome model dynamically (with or without treatment).
         """
-        best_params, best_model, best_score = None, None, -float('inf')
-        
+        best_params, best_model, best_score = None, None, None
+
+        # Initialize best_score based on model type
+        if self.cfg.models.outcome.model_type == 'classification':
+            best_score = -float('inf')  # Higher accuracy is better
+        elif self.cfg.models.outcome.model_type == 'regression':
+            best_score = float('inf')  # Lower MAE is better
+
         for params in ParameterGrid(self.param_grid_outcome):
             outcome_model_class = self.get_model_class(self.cfg.models.outcome.model_class)
-            
+
             # Dynamically initialize model
-            if treatment_train is not None:  # For health use case
+            if treatment_train is not None:  # For health use case (regression)
                 learner = instantiate(self.cfg.models.outcome.learner)  # Resolve learner
                 outcome_model = outcome_model_class(learner=learner)
-            else:  # For lending use case
+            else:  # For lending use case (classification)
                 classifier = instantiate(self.cfg.models.outcome.classifier)  # Resolve classifier
                 outcome_model = outcome_model_class(classifier=classifier)
 
             print(f"Trying parameters: {params}")
 
             # Train with or without treatment
+            logging.getLogger("causalml").setLevel(logging.WARNING)
             if treatment_train is not None:
                 outcome_model.train(X_train, treatment_train, y_train, **params)
             else:
                 outcome_model.train(X_train, y_train, **params)
 
-            # Evaluate
+            # Evaluate and update best model
             if treatment_val is not None:
                 score = outcome_model.evaluate(X_val, treatment_val, y_val)
             else:
                 score = outcome_model.evaluate(X_val, y_val)
 
-            if score > best_score:
+            # Update best score and model based on model type
+            if (self.cfg.models.outcome.model_type == 'classification' and score > best_score) or \
+            (self.cfg.models.outcome.model_type == 'regression' and score < best_score):
                 best_score, best_params, best_model = score, params, outcome_model
 
         return best_params, best_model, best_score
@@ -210,6 +220,7 @@ class CrossValidator:
                 X_train_outcome, treatment_train, y_train_outcome, 
                 X_val_outcome,treatment_val, y_val_outcome
             )
+            print(f'best_model_outcome{best_model_outcome}')
             self.best_hyperparams_outcome_per_fold.append(best_params_outcome)
             self.best_outcome_models_per_fold.append(best_model_outcome)
             self.fold_scores_outcome.append(best_score_outcome)
