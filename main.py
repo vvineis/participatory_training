@@ -8,33 +8,48 @@ from src.final_evaluation import run_final_evaluation
 from hydra.utils import instantiate
 import os
 
+import os
+import time
+from omegaconf import OmegaConf
+
+def save_results(cfg, cv_results, final_results):
+    # Create a unique folder for each run
+    unique_id = time.strftime("%Y%m%d-%H%M%S")  # Timestamp for uniqueness
+    result_subfolder = os.path.join(cfg.result_path, f"run_{unique_id}_Accuracy_{cfg.ranking_weights.Accuracy}")
+    os.makedirs(result_subfolder, exist_ok=True)
+
+    # Save results to the specific subfolder
+    cv_results['ranked_decision_metrics_df'].to_csv(
+        os.path.join(result_subfolder, 'cv_ranked_decision_metrics.csv'), index=False
+    )
+    final_results['ranked_decision_metrics_df'].to_csv(
+        os.path.join(result_subfolder, 'final_ranked_decision_metrics.csv'), index=False
+    )
+
+    print(f"Results saved to: {result_subfolder}")
+
+
 @hydra.main(version_base="1.1", config_path="conf", config_name="config")
 def main(cfg: DictConfig):
     print(OmegaConf.to_yaml(cfg))
-
-    print("Actor List:", cfg.setting.actor_list)
-    print("Reward Types:", cfg.setting.reward_types)
-
-    print("Type of param_grid:", type(cfg.models.rewards.param_grid))
-    param_grid = dict(cfg.models.rewards.param_grid)
-    print("Type of param_grid:", type(param_grid))
-    print("Contents of param_grid:", param_grid)
+    print("Criteria Key:", cfg.get("criteria", "Not Found"))
 
     # Load data
     df = pd.read_csv(cfg.data_path)
     df = df.iloc[0:cfg.sample_size]  # Limit data if needed for testing
 
     # Initialize RewardCalculator with reward types from configuration
-    reward_calculator = RewardCalculator(cfg.setting.reward_types)
+    reward_calculator = RewardCalculator(cfg.actors.reward_types)
     df_ready = reward_calculator.compute_rewards(df)
 
     # Instantiate ranking criteria if needed (if create_ranking_criteria returns specific values)
     ranking_criteria = cfg.criteria.ranking_criteria
     metrics_for_evaluation = cfg.criteria.metrics_for_evaluation
-    ranking_weights = cfg.criteria.ranking_weights
+    ranking_weights = cfg.ranking_weights
+    #print("Decision Criteria:", cfg.decision_criteria)
 
-    print("Ranking Criteria:", ranking_criteria)
-    print("Metrics for Evaluation:", metrics_for_evaluation)
+    #print("Ranking Criteria:", ranking_criteria)
+    #print("Metrics for Evaluation:", metrics_for_evaluation)
     print("Ranking Weights:", ranking_weights)
     
     # Initialize the DataProcessor
@@ -70,9 +85,11 @@ def main(cfg: DictConfig):
 
     os.makedirs(cfg.result_path, exist_ok=True)
 
+    save_results(cfg, cv_results, final_results)
+
     # Save results to the specified directory
-    cv_results['ranked_decision_metrics_df'].to_csv(os.path.join(cfg.result_path, 'cv_ranked_decision_metrics.csv'), index=False)
-    final_results['ranked_decision_metrics_df'].to_csv(os.path.join(cfg.result_path, 'final_ranked_decision_metrics.csv'), index=False)
+    #cv_results['ranked_decision_metrics_df'].to_csv(os.path.join(cfg.result_path, 'cv_ranked_decision_metrics.csv'), index=False)
+    #final_results['ranked_decision_metrics_df'].to_csv(os.path.join(cfg.result_path, 'final_ranked_decision_metrics.csv'), index=False)
 
     print(f"Results saved to the '{cfg.result_path}' folder")
 

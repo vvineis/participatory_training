@@ -13,7 +13,7 @@ class DecisionProcessor:
         """
         Encode numerical and categorical features.
         """
-        feature_columns = self.cfg.setting.feature_columns
+        feature_columns = self.cfg.context.feature_columns
         categorical_columns = self.cfg.categorical_columns
 
         numerical_features = feature_context[feature_columns]
@@ -32,7 +32,7 @@ class DecisionProcessor:
         """
         Compute expected rewards for all actors and actions.
         """
-        feature_columns = self.cfg.setting.feature_columns
+        feature_columns = self.cfg.context.feature_columns
         feature_context = feature_context[feature_columns]
 
         # Predict probabilities for each possible outcome
@@ -41,7 +41,7 @@ class DecisionProcessor:
         predicted_class_list = [outcome_classes[np.argmax(prob)] for prob in outcome_probs]
 
         expected_rewards = {actor: {} for actor in self.reward_models.keys()}
-        actions_set = self.cfg.setting.actions_set
+        actions_set = self.cfg.actions_outcomes.actions_set
 
         for action in actions_set:
             for idx, outcome in enumerate(outcome_classes):

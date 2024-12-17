@@ -2,9 +2,6 @@
 from sklearn.metrics import mean_squared_error
 from sklearn.base import clone
 
-from sklearn.base import clone
-from sklearn.metrics import mean_squared_error
-
 class RewardModels:
     def __init__(self, regressor_class, reward_types, **regressor_params):
         """

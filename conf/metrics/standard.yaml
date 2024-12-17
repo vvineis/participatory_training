@@ -1,5 +1,0 @@
-standard_metrics : 
-  - Precision 
-  - Recall 
-  - F1 Score 
-  - Accuracy

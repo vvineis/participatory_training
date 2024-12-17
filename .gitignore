@@ -3,3 +3,4 @@ PartTrainEnv/
 __pycache__
 .venv
 /outputs
+/multirun

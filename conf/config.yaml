@@ -1,25 +1,22 @@
 defaults:
-  - setting/actors
-  - setting/context
-  - setting/actions_outcomes
-  - setting/augmentation_for_rewards
-  - criteria/decision_criteria
-  - criteria/evaluation_criteria
-  - metrics/fairness
-  - metrics/standard
-  - metrics/case_specific
-  - models/outcome/outcome_classifier
-  - models/rewards/rewards_regressor
-  - models/outcome/param_grid_outcome
-  - models/rewards/param_grid_rewards
-  
+  - use_case: lending   # Dynamically specify the active use case
   - _self_
 
+_recursive_: true
 
-data_path: 'C:/Users/Vittoria/Documents/GitHub/participatory_training/data/lending_club_data.csv'
-result_path: 'C:/Users/Vittoria/Documents/GitHub/participatory_training/results'
+# Paths (dynamically resolve from lending.yaml)
+data_path: ${use_case.data_path}
+result_path: ${use_case.result_path}
 
-case_specific_metrics_module: utils.metrics.case_specific_metrics
+# Dynamically access components within lending.yaml
+criteria: ${use_case.criteria}  
+models: ${use_case.models}
+actors: ${use_case.actors}
+actions_outcomes: ${use_case.actions_outcomes}
+augmentation_for_rewards: ${use_case.augmentation_for_rewards}
+context: ${use_case.context}
+case_specific_metrics: ${use_case.case_specific_metrics}
+ranking_weights: ${use_case.criteria.ranking_weights}
 
 categorical_columns: 
   - Action
@@ -28,3 +25,28 @@ categorical_columns:
 cv_splits: 5
 test_size: 0.2
 sample_size: 5000
+
+
+decision_criteria: 
+  - Maximin
+  - Nash Social Welfare
+  - Kalai-Smorodinsky
+  - Nash Bargaining
+  - Compromise Programming
+  - Proportional Fairness
+
+fairness: 
+  fairness_metrics: 
+    - Demographic Parity
+    - Equal Opportunity
+    - Equalized Odds
+    - Calibration
+
+  positive_attribute_for_fairness: 'Applicant Type' #note: should be boolean 
+  positive_group_value: 1
+
+standard_metrics: 
+  - Precision 
+  - Recall 
+  - F1 Score 
+  - Accuracy

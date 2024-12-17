@@ -8,19 +8,19 @@ from utils.rewards.get_rewards import RewardCalculator
 class DataProcessor:
     def __init__(self, df, cfg, random_split=True):
         self.df = df
-        self.feature_columns = cfg.setting.feature_columns
-        self.columns_to_display = cfg.setting.columns_to_display
+        self.feature_columns = cfg.context.feature_columns
+        self.columns_to_display = cfg.context.columns_to_display
         self.categorical_columns = cfg.categorical_columns
         self.test_size = cfg.test_size
-        self.reward_types= cfg.setting.reward_types
+        self.reward_types= cfg.actors.reward_types
         self.n_splits = cfg.cv_splits
         self.random_split = random_split
         self.scaler = StandardScaler()
         self.onehot_encoder = OneHotEncoder(sparse_output=False, drop=None, handle_unknown='ignore')
         self._split_data()
         self.reward_calculator = RewardCalculator(self.reward_types)
-        self.augmentation_strategy = cfg.setting.augmentation_strategy  
-        self.augmentation_params = cfg.setting.augmentation_parameters.get(self.augmentation_strategy, {})
+        self.augmentation_strategy = cfg.augmentation_for_rewards.augmentation_strategy  
+        self.augmentation_params = cfg.augmentation_for_rewards.augmentation_parameters.get(self.augmentation_strategy, {})
 
 
     def _split_data(self):

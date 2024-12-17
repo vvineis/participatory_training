@@ -20,16 +20,16 @@ class CrossValidator:
         self.param_grid_outcome = dict(cfg.models.outcome.param_grid)
         self.param_grid_reward = dict(cfg.models.rewards.param_grid)
         self.n_splits = cfg.cv_splits
-        self.feature_columns = cfg.setting.feature_columns
+        self.feature_columns = cfg.context.feature_columns
         self.categorical_columns = cfg.categorical_columns
-        self.actions_set = cfg.setting.actions_set
-        self.actor_list = cfg.setting.actor_list
-        self.reward_types = cfg.setting.reward_types
-        self.decision_criteria_list = cfg.criteria.decision_criteria
+        self.actions_set = cfg.actions_outcomes.actions_set
+        self.actor_list = cfg.actors.actor_list
+        self.reward_types = cfg.actors.reward_types
+        self.decision_criteria_list = cfg.decision_criteria
         self.ranking_criteria = cfg.criteria.ranking_criteria
-        self.ranking_weights = cfg.criteria.ranking_weights
+        self.ranking_weights = cfg.ranking_weights
         self.metrics_for_evaluation = cfg.criteria.metrics_for_evaluation
-        self.positive_attribute_for_fairness = cfg.metrics.positive_attribute_for_fairness
+        self.positive_attribute_for_fairness = cfg.fairness.positive_attribute_for_fairness
         self.max_individual_strategy = MaxIndividualReward()
 
         # Instantiate MetricsCalculator and SummaryProcessor with the strategy

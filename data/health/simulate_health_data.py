@@ -113,10 +113,13 @@ patient_data = pd.DataFrame({
     'Cost': costs
 })
 
-print((patient_data.head()))
+
+output_path = r'C:\Users\Vittoria\Documents\GitHub\participatory_training\data\health\simulated_health_data.csv'
+patient_data.to_csv(output_path, index=False)  # Saves without row indices
+print(f"Patient data saved to: {output_path}")
 
 
-# One-hot encode the features
+'''# One-hot encode the features
 X = pd.get_dummies(patient_data[['Age', 'Comorbidities', 'Gender', 'Region', 'SmokingStatus']], drop_first=True)
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
@@ -163,5 +166,6 @@ for i in range(len(X_test)):
     actual_outcomes.append(y_test.iloc[i])
     actual_treatment.append(treatment_test)
 
-print(f'treat {treatment_test[0:5]}, actual_outcome {y_test[0:5]}, pred_A {predicted_outcomes_A[0:5]}, pred_C {predicted_outcomes_C[0:5]}')
+print(f'treat {treatment_test[0:5]}, actual_outcome {y_test[0:5]}, pred_A {predicted_outcomes_A[0:5]}, pred_C {predicted_outcomes_C[0:5]}')'''
+
 

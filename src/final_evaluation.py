@@ -8,7 +8,7 @@ from hydra.utils import instantiate
 
 def run_final_evaluation(data_processor, cv_results, all_train_set, test_set, cfg):
     # Prepare training and test sets
-    reward_types= cfg.setting.reward_types
+    reward_types= cfg.actors.reward_types
     final_training_data = data_processor.prepare_for_training(all_train_set, test_set)
 
     X_train_outcome, y_train_outcome = final_training_data['train_outcome']

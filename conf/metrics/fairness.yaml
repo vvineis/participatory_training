@@ -1,8 +1,0 @@
-fairness_metrics: 
-  - Demographic Parity
-  - Equal Opportunity
-  - Equalized Odds
-  - Calibration
-
-positive_attribute_for_fairness: 'Applicant Type' #note: should be boolean 
-positive_group_value: 1

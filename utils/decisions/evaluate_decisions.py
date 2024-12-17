@@ -8,15 +8,15 @@ class SummaryProcessor:
         """
         self.metrics_calculator = metrics_calculator
         self.ranking_criteria = cfg.criteria.ranking_criteria
-        self.ranking_weights = dict(cfg.criteria.ranking_weights)
+        self.ranking_weights = dict(cfg.ranking_weights)
         self.metrics_for_evaluation = cfg.criteria.metrics_for_evaluation
-        self.reward_types = cfg.setting.reward_types
-        self.decision_criteria_list = cfg.criteria.decision_criteria
-        self.actions_set = cfg.setting.actions_set
-        self.outcomes_set = cfg.setting.outcomes_set
+        self.reward_types = cfg.actors.reward_types
+        self.decision_criteria_list = cfg.decision_criteria
+        self.actions_set = cfg.actions_outcomes.actions_set
+        self.outcomes_set = cfg.actions_outcomes.outcomes_set
         self.strategy = strategy  # Use the provided strategy for computing actions
         self.seed = seed
-        self.mapping=cfg.setting.mapping
+        self.mapping=cfg.actions_outcomes.mapping
         if self.seed is not None:
             random.seed(self.seed)
 

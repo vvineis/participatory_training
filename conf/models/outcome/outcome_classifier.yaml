@@ -1,2 +1,0 @@
-classifier:
-  _target_: sklearn.ensemble.RandomForestClassifier

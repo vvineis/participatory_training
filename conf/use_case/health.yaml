@@ -1,0 +1,4 @@
+data_path: "C:/Users/Vittoria/Documents/GitHub/participatory_training/data/health/"
+data_file: "simulated_health_data.csv"
+
+results_path: "C:/Users/Vittoria/Documents/GitHub/participatory_training/results/health/"
