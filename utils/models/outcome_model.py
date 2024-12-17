@@ -54,6 +54,8 @@ class CausalOutcomeModel:
         self.model = BaseXRegressor(learner=self.learner, control_name=self.control_name)
 
     def train(self, X_train, treatment_train, y_train, **hyperparams):
+        print("Unique values in treatment column:", treatment_train.unique())
+
         if 'random_state' in self.learner.get_params():
             hyperparams['random_state'] = self.random_state
         self.learner.set_params(**hyperparams)

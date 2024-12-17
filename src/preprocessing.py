@@ -3,11 +3,13 @@ from sklearn.model_selection import train_test_split, KFold
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from utils.rewards.get_rewards import RewardCalculator
 from hydra.utils import instantiate
+import warnings
 
 
 
 class DataProcessor:
     def __init__(self, df, cfg, random_split=True):
+        self.cfg = cfg  
         self.df = df
         self.feature_columns = cfg.context.feature_columns
         self.columns_to_display = cfg.context.columns_to_display
@@ -50,9 +52,8 @@ class DataProcessor:
         val_or_test_df = self.scale_features(val_df, fit=False)
 
         # Prepare outcome prediction data
-        X_train_outcome, y_train_outcome = self.prepare_for_outcome_prediction(train_df)
-        X_val_or_test_outcome, y_val_or_test_outcome = val_or_test_df[self.feature_columns], val_or_test_df['Outcome']
-
+        X_train_outcome, treatment_train, y_train_outcome = self.prepare_for_outcome_prediction(train_df)
+        X_val_or_test_outcome, treatment_val_or_test, y_val_or_test_outcome = self.prepare_for_outcome_prediction(val_or_test_df)
         # Prepare reward prediction data
         augmented_train_df = self.augment_train_for_reward(train_df)
 
@@ -76,8 +77,8 @@ class DataProcessor:
 
         # Dictionary to store training and validation data for each reward type
         dict_for_training = {
-            'train_outcome': (X_train_outcome, y_train_outcome),
-            'val_or_test_outcome': (X_val_or_test_outcome, y_val_or_test_outcome),
+            'train_outcome': (X_train_outcome, treatment_train, y_train_outcome),
+            'val_or_test_outcome': (X_val_or_test_outcome,treatment_val_or_test, y_val_or_test_outcome),
             'train_reward': (X_train_reward_combined, y_train_rewards), #*y_train_rewards.values()),
             'val_or_test_reward': (X_val_or_test_reward_combined, y_val_or_test_rewards), #*y_val_or_test_rewards.values()),
             'val_or_test_set': val_or_test_df,
@@ -89,10 +90,14 @@ class DataProcessor:
         return dict_for_training
 
     def scale_features(self, df, fit=True):
-        if fit:
-            df.loc[:, self.feature_columns] = self.scaler.fit_transform(df[self.feature_columns])
-        else:
-            df.loc[:, self.feature_columns] = self.scaler.transform(df[self.feature_columns])
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=FutureWarning)
+
+            numeric_columns = df[self.feature_columns].select_dtypes(include=['int', 'float']).columns
+            if fit:
+                df.loc[:,  numeric_columns] = self.scaler.fit_transform(df[numeric_columns])
+            else:
+                df.loc[:,  numeric_columns] = self.scaler.transform(df[numeric_columns])
         return df
 
     def one_hot_encode(self, train_df, val_df):
@@ -157,10 +162,19 @@ class DataProcessor:
 
 
     def prepare_for_outcome_prediction(self, df):
-        X = df[self.feature_columns]
+        """
+        Prepare features (X), target (y), and treatment column (conditionally).
+        The 'Action' column is included only for the health use case.
+        """
+        X = df[self.feature_columns]  # Use configured feature columns
         y = df['Outcome']
 
-        return X, y
+        # Conditionally handle the 'Action' column for health use case
+        treatment = None
+        if self.cfg.use_case.name == 'health' and 'Action' in df.columns:
+            treatment = df['Action']
+        
+        return X, treatment, y
 
     def prepare_for_reward_prediction(self, df):
         reward_features = self.feature_columns + self.categorical_columns #['Income', 'Credit Score', 'Loan Amount', 'Interest Rate', 'Action', 'Outcome']

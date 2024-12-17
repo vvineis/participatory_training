@@ -10,15 +10,26 @@ from utils.metrics.get_metrics import MetricsCalculator
 from hydra.utils import instantiate
 from omegaconf import DictConfig
 from hydra.utils import instantiate
+from importlib import import_module
 
 class CrossValidator:
     def __init__(self, cfg, process_train_val_folds):
         self.cfg = cfg
-        self.classifier = instantiate(cfg.models.outcome.classifier) 
-        self.regressor =  instantiate(cfg.models.rewards.regressor) 
         self.process_train_val_folds = process_train_val_folds
+
+        # Dynamically load the outcome model class
+        self.model_class = self.get_model_class(cfg.models.outcome.model_class)
+        if "classifier" in cfg.models.outcome:
+            self.model_component = instantiate(cfg.models.outcome.classifier)
+        elif "learner" in cfg.models.outcome:
+            self.model_component = instantiate(cfg.models.outcome.learner)
+        else:
+            self.model_component = None
         self.param_grid_outcome = dict(cfg.models.outcome.param_grid)
+
+        self.regressor =  instantiate(cfg.models.rewards.regressor)  
         self.param_grid_reward = dict(cfg.models.rewards.param_grid)
+
         self.n_splits = cfg.cv_splits
         self.feature_columns = cfg.context.feature_columns
         self.categorical_columns = cfg.categorical_columns
@@ -74,18 +85,51 @@ class CrossValidator:
         for i, summary_df in enumerate(self.cv_results.get('all_fold_summaries', [])):
             print(f"Fold {i+1} summary DataFrame length: {summary_df.shape[0]}")
 
+    def get_model_class(self, class_name):
+        """
+        Dynamically import and return the specified class.
+        :param class_name: Name of the class as a string.
+        :return: Class reference.
+        """
+        module = import_module("utils.models.outcome_model")  
+        return getattr(module, class_name)
 
-    def tune_outcome_model(self, X_train, y_train, X_val, y_val):
+    def tune_outcome_model(self, X_train, treatment_train, y_train, X_val, treatment_val, y_val):
+        """
+        Tune the outcome model dynamically (with or without treatment).
+        """
         best_params, best_model, best_score = None, None, -float('inf')
+        
         for params in ParameterGrid(self.param_grid_outcome):
-            self.outcome_model = OutcomeModel(self.classifier)
-            print(f"Trying parameters for outcome model: {params}")
-            model = self.outcome_model.train(X_train, y_train, **params)
-            score = self.outcome_model.evaluate(X_val, y_val)
+            outcome_model_class = self.get_model_class(self.cfg.models.outcome.model_class)
+            
+            # Dynamically initialize model
+            if treatment_train is not None:  # For health use case
+                learner = instantiate(self.cfg.models.outcome.learner)  # Resolve learner
+                outcome_model = outcome_model_class(learner=learner)
+            else:  # For lending use case
+                classifier = instantiate(self.cfg.models.outcome.classifier)  # Resolve classifier
+                outcome_model = outcome_model_class(classifier=classifier)
+
+            print(f"Trying parameters: {params}")
+
+            # Train with or without treatment
+            if treatment_train is not None:
+                outcome_model.train(X_train, treatment_train, y_train, **params)
+            else:
+                outcome_model.train(X_train, y_train, **params)
+
+            # Evaluate
+            if treatment_val is not None:
+                score = outcome_model.evaluate(X_val, treatment_val, y_val)
+            else:
+                score = outcome_model.evaluate(X_val, y_val)
+
             if score > best_score:
-                best_score, best_params, best_model = score, params, model
+                best_score, best_params, best_model = score, params, outcome_model
+
         return best_params, best_model, best_score
-    
+
     def tune_reward_models(self, X_train, y_train_rewards, X_val, y_val_rewards):
         best_params, best_models, best_score = None, {}, float('inf')
 
@@ -149,8 +193,11 @@ class CrossValidator:
             print(f"Processing fold {fold + 1}/{self.n_splits}")
             
             # Unpack train and validation sets for the fold
-            X_train_outcome, y_train_outcome = fold_dict['train_outcome']
-            X_val_outcome, y_val_outcome = fold_dict['val_or_test_outcome']
+            X_train_outcome, treatment_train, y_train_outcome = fold_dict['train_outcome']
+            print(f'X_train_outcome {X_train_outcome.columns}')
+            print(f'treatment_train {treatment_train}')
+            print(f'y_train_outcome {y_train_outcome}')
+            X_val_outcome, treatment_val, y_val_outcome = fold_dict['val_or_test_outcome']
            # X_train_reward, y_train_bank, y_train_applicant, y_train_regulatory = fold_dict['train_reward']
            # X_val_reward, y_val_bank, y_val_applicant, y_val_regulatory = fold_dict['val_or_test_reward']
             # Access rewards as dictionaries
@@ -160,7 +207,8 @@ class CrossValidator:
 
             # Tune outcome model
             best_params_outcome, best_model_outcome, best_score_outcome = self.tune_outcome_model(
-                X_train_outcome, y_train_outcome, X_val_outcome, y_val_outcome
+                X_train_outcome, treatment_train, y_train_outcome, 
+                X_val_outcome,treatment_val, y_val_outcome
             )
             self.best_hyperparams_outcome_per_fold.append(best_params_outcome)
             self.best_outcome_models_per_fold.append(best_model_outcome)

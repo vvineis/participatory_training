@@ -117,7 +117,7 @@ patient_data = pd.DataFrame({
 categorical_columns = ['Gender', 'Region', 'SmokingStatus', 'PhysicalActivity']
 
 # Perform one-hot encoding on the specified columns
-encoded_data = pd.get_dummies(patient_data[categorical_columns], drop_first=True)
+encoded_data = pd.get_dummies(patient_data[categorical_columns], drop_first=True).astype(int)
 
 # Combine the original DataFrame (excluding encoded columns) with the encoded version
 final_patient_data = pd.concat(
