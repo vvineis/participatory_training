@@ -38,7 +38,14 @@ case_specific_metrics:
     - Unexploited Profit
 
   case_specific_metrics_module: 
-    _target_: utils.metrics.case_specific_metrics.CaseMetrics
+    _target_: utils.metrics.case_specific_metrics.LendingCaseMetrics
+
+  positive_attribute_for_fairness: 'Applicant Type'
+  positive_group_value: 1
+
+reward_calculator:
+  _target_: utils.rewards.get_rewards.RewardCalculator
+  reward_types: ${actors.reward_types}
 
 models: 
   outcome:
@@ -105,14 +112,10 @@ actors:
     - Regulatory
 
 augmentation_for_rewards:
-  augmentation_strategy: "default"  # Choose between "default" or "alternate"
-
   augmentation_parameters:
-    default:
-      action: "Not Grant"
-      additional_arguments: ["Applicant Type", "Loan Amount", "Interest Rate"]
-    alternate:
-      action: "Custom Action"
+    actions_set: ${actions_outcomes.actions_set}
+    additional_arguments: ["Applicant Type", "Loan Amount", "Interest Rate"]
+
 
 context:
   feature_columns:

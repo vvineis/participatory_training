@@ -12,8 +12,8 @@ class FairnessMetrics:
         self.outcome_col = outcome_col
 
         # Config-specified values
-        self.group_col = cfg.fairness.positive_attribute_for_fairness
-        self.positive_group_value = cfg.fairness.positive_group_value
+        self.group_col = cfg.case_specific_metrics.positive_attribute_for_fairness
+        self.positive_group_value = cfg.case_specific_metrics.positive_group_value
         self.actions_set = cfg.actions_outcomes.positive_actions_set
         self.outcomes_set = cfg.actions_outcomes.outcomes_set
 

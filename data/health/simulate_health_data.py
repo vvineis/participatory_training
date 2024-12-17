@@ -34,6 +34,7 @@ genders = np.random.choice(['M', 'F'], size=n_obs)
 ages = (np.random.beta(a=5, b=2, size=n_obs) * 67 + 18).astype(int)
 regions = np.random.choice(['Urban', 'Rural'], size=n_obs)
 
+
 # Smoking status (higher prevalence in males)
 smoking_status = [
     np.random.choice(['Smoker', 'Non-smoker'], p=[0.3, 0.7]) if gender == 'M' else
@@ -41,7 +42,6 @@ smoking_status = [
     for gender in genders
 ]
 
-# Comorbidities based on smoking and age
 # Comorbidities based on smoking and age
 comorbidities = []
 for age, smoker in zip(ages, smoking_status):
@@ -108,14 +108,24 @@ patient_data = pd.DataFrame({
     'Region': regions,
     'SmokingStatus': smoking_status,
     'PhysicalActivity': physical_activity,
-    'Treatment': treatments,
-    'RecoveryWeeks': recovery_times,
-    'Cost': costs
+    'Action': treatments,
+    'Outcome': recovery_times,
+    'Cost': costs,
 })
 
+# List of columns to encode (categorical)
+categorical_columns = ['Gender', 'Region', 'SmokingStatus', 'PhysicalActivity']
 
+# Perform one-hot encoding on the specified columns
+encoded_data = pd.get_dummies(patient_data[categorical_columns], drop_first=True)
+
+# Combine the original DataFrame (excluding encoded columns) with the encoded version
+final_patient_data = pd.concat(
+    [patient_data.drop(columns=categorical_columns), encoded_data],
+    axis=1
+)
 output_path = r'C:\Users\Vittoria\Documents\GitHub\participatory_training\data\health\simulated_health_data.csv'
-patient_data.to_csv(output_path, index=False)  # Saves without row indices
+final_patient_data.to_csv(output_path, index=False)  # Saves without row indices
 print(f"Patient data saved to: {output_path}")
 
 

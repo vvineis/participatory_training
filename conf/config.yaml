@@ -1,5 +1,5 @@
 defaults:
-  - use_case: lending   # Dynamically specify the active use case
+  - use_case: health   # Dynamically specify the active use case
   - _self_
 
 _recursive_: true
@@ -17,14 +17,15 @@ augmentation_for_rewards: ${use_case.augmentation_for_rewards}
 context: ${use_case.context}
 case_specific_metrics: ${use_case.case_specific_metrics}
 ranking_weights: ${use_case.criteria.ranking_weights}
+reward_calculator: ${use_case.reward_calculator}
 
 categorical_columns: 
   - Action
   - Outcome
 
-cv_splits: 5
+cv_splits: 2
 test_size: 0.2
-sample_size: 5000
+sample_size: 1000
 
 
 decision_criteria: 
@@ -42,8 +43,7 @@ fairness:
     - Equalized Odds
     - Calibration
 
-  positive_attribute_for_fairness: 'Applicant Type' #note: should be boolean 
-  positive_group_value: 1
+
 
 standard_metrics: 
   - Precision 

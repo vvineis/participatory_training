@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 
-
 class RewardCalculator:
     # Define base reward structures
     REWARD_STRUCTURES = {
@@ -137,7 +136,7 @@ class RewardCalculator:
 
 
 class HealthRewardCalculator:
-    def __init__(self, base_cost, recovery_factor, max_cost, alpha=0.5, noise_level=0.05):
+    def __init__(self, base_cost, recovery_factor, max_cost, alpha=0.5, noise_level=0.05, reward_types=None):
         """
         Initialize the reward calculator.
         :param base_cost: Base cost per treatment (dict).
@@ -145,62 +144,90 @@ class HealthRewardCalculator:
         :param max_cost: Maximum total cost for normalization.
         :param alpha: Weight for prioritizing recovery time in NHA's reward (0 <= alpha <= 1).
         :param noise_level: Random noise to add variability to rewards.
+        :param reward_types: List of reward types to compute dynamically.
         """
         self.base_cost = base_cost
         self.recovery_factor = recovery_factor
         self.max_cost = max_cost
         self.alpha = alpha
         self.noise_level = noise_level
+        self.reward_types = reward_types if reward_types else []
 
     def compute_cost(self, treatment, recovery_time):
-        """
-        Compute the total cost based on treatment and recovery time.
-        """
+        """ Compute the total cost based on treatment and recovery time. """
         return self.base_cost[treatment] + recovery_time * self.recovery_factor
+    
+    def get_rewards(self, action, outcome, *args):
+        """
+        Dynamically compute rewards for a given action and outcome.
+        :param action: Treatment action (e.g., 'A', 'C').
+        :param outcome: Recovery time in weeks.
+        :param args: Additional arguments if required.
+        :return: List of rewards for the specified reward_types.
+        """
+        # Compute cost based on the given action and outcome
+        cost = self.compute_cost(action, outcome)
 
-    def patient_reward(self, recovery_time):
-        """
-        Patient's reward based on recovery time (faster is better).
-        """
-        reward = 1 - (recovery_time - 1) / (12 - 1)  # Normalize to [0, 1]
-        reward += np.random.uniform(-self.noise_level, self.noise_level)  # Add noise
-        return np.clip(reward, 0, 1)
+        # Calculate rewards for each reward type
+        rewards = {}
+        for reward_type in self.reward_types:
+            if reward_type == "Patient":
+                rewards[reward_type] = self._patient_reward(outcome)
+            elif reward_type == "Hospital_Admin":
+                rewards[reward_type] = self._hospital_reward(cost)
+            elif reward_type == "NHA":
+                rewards[reward_type] = self._nha_reward(outcome, cost)
+            else:
+                raise ValueError(f"Unknown reward type: {reward_type}")
 
-    def hospital_reward(self, cost):
-        """
-        Hospital's reward based on total cost (lower is better).
-        """
-        reward = 1 - cost / self.max_cost  # Normalize cost to [0, 1]
-        reward += np.random.uniform(-self.noise_level, self.noise_level)  # Add noise
-        return np.clip(reward, 0, 1)
-
-    def nha_reward(self, recovery_time, cost):
-        """
-        NHA's reward balancing recovery time and cost.
-        """
-        recovery_factor = self.patient_reward(recovery_time)
-        cost_factor = self.hospital_reward(cost)
-        reward = self.alpha * recovery_factor + (1 - self.alpha) * cost_factor
-        reward += np.random.uniform(-self.noise_level, self.noise_level)  # Add noise
-        return np.clip(reward, 0, 1)
+        # Return rewards in the order of reward_types
+        return [rewards[reward_type] for reward_type in self.reward_types]
 
     def compute_rewards(self, df):
         """
         Compute rewards for all agents and add them to the DataFrame.
-        :param df: DataFrame with columns ['Treatment', 'RecoveryWeeks'].
-        :return: DataFrame with rewards added.
+        :param df: DataFrame with columns ['Action', 'Outcome'].
+        :return: DataFrame with rewards added dynamically.
         """
-        # Compute costs
-        df['Cost'] = df.apply(lambda row: self.compute_cost(row['Treatment'], row['RecoveryWeeks']), axis=1)
+        # Check for required columns
+        if 'Action' not in df.columns or 'Outcome' not in df.columns:
+            raise ValueError("Input DataFrame must contain 'Action' and 'Outcome' columns.")
 
-        # Compute rewards
-        df['Patient_reward'] = df['RecoveryWeeks'].apply(self.patient_reward)
-        df['Hospital_reward'] = df['Cost'].apply(self.hospital_reward)
-        df['NHA_reward'] = df.apply(
-            lambda row: self.nha_reward(row['RecoveryWeeks'], row['Cost']),
-            axis=1
-        )
+        # Compute costs
+        df['Cost'] = df.apply(lambda row: self.compute_cost(row['Action'], row['Outcome']), axis=1)
+
+        # Dynamically compute rewards based on reward_types
+        for reward_type in self.reward_types:
+            if reward_type == "Patient":
+                df[f"{reward_type}_reward"] = df['Outcome'].apply(self._patient_reward)
+            elif reward_type == "Hospital_Admin":
+                df[f"{reward_type}_reward"] = df['Cost'].apply(self._hospital_reward)
+            elif reward_type == "NHA":
+                df[f"{reward_type}_reward"] = df.apply(lambda row: self._nha_reward(row['Outcome'], row['Cost']), axis=1)
+            else:
+                raise ValueError(f"Unknown reward type: {reward_type}")
+
         return df
+
+    def _patient_reward(self, recovery_time):
+        """ Patient's reward based on recovery time (faster is better). """
+        reward = 1 - (recovery_time - 1) / (12 - 1)
+        reward += np.random.uniform(-self.noise_level, self.noise_level)
+        return np.clip(reward, 0, 1)
+
+    def _hospital_reward(self, cost):
+        """ Hospital's reward based on total cost (lower is better). """
+        reward = 1 - cost / self.max_cost
+        reward += np.random.uniform(-self.noise_level, self.noise_level)
+        return np.clip(reward, 0, 1)
+
+    def _nha_reward(self, recovery_time, cost):
+        """ NHA's reward balancing recovery time and cost. """
+        recovery_factor = self._patient_reward(recovery_time)
+        cost_factor = self._hospital_reward(cost)
+        reward = self.alpha * recovery_factor + (1 - self.alpha) * cost_factor
+        reward += np.random.uniform(-self.noise_level, self.noise_level)
+        return np.clip(reward, 0, 1)
 
 
 '''if __name__ == "__main__":

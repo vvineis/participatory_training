@@ -29,7 +29,7 @@ class CrossValidator:
         self.ranking_criteria = cfg.criteria.ranking_criteria
         self.ranking_weights = cfg.ranking_weights
         self.metrics_for_evaluation = cfg.criteria.metrics_for_evaluation
-        self.positive_attribute_for_fairness = cfg.fairness.positive_attribute_for_fairness
+        self.positive_attribute_for_fairness = cfg.case_specific_metrics.positive_attribute_for_fairness
         self.max_individual_strategy = MaxIndividualReward()
 
         # Instantiate MetricsCalculator and SummaryProcessor with the strategy

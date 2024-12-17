@@ -1,4 +1,136 @@
-data_path: "C:/Users/Vittoria/Documents/GitHub/participatory_training/data/health/"
-data_file: "simulated_health_data.csv"
+name: health
 
-results_path: "C:/Users/Vittoria/Documents/GitHub/participatory_training/results/health/"
+data_path: "C:/Users/Vittoria/Documents/GitHub/participatory_training/data/health/simulated_health_data.csv"
+result_path: "C:/Users/Vittoria/Documents/GitHub/participatory_training/results/health/"
+
+criteria:
+  ranking_criteria:
+    Demographic Parity_Worst: zero
+    Equal Opportunity_Worst: zero
+    Equalized Odds_Worst: zero
+    Calibration_Worst: zero
+    Total Cost: min
+    Accuracy: max
+
+  metrics_for_evaluation:
+    - Demographic Parity_Worst
+    - Equal Opportunity_Worst
+    - Equalized Odds_Worst
+    - Calibration_Worst
+    - Total Cost
+    - Accuracy
+
+  ranking_weights:
+    Demographic Parity_Worst: 0.2
+    Equal Opportunity_Worst: 0
+    Equalized Odds_Worst: 0
+    Calibration_Worst: 0.2
+    Total Cost: 0.2
+    Accuracy: 0.4
+
+case_specific_metrics: 
+  metrics: 
+    - Total Cost
+
+  case_specific_metrics_module:  #Modificare
+    _target_: utils.metrics.case_specific_metrics.HealthCaseMetrics
+  
+  positive_attribute_for_fairness: 'Region_Urban'
+  positive_group_value: 1
+
+reward_calculator:
+  _target_: utils.rewards.get_rewards.HealthRewardCalculator
+  reward_types: ${actors.reward_types}
+  base_cost: {'A': 6000, 'C': 2000}
+  recovery_factor: 400
+  max_cost: 12000
+  alpha: 0.6
+
+models: 
+  outcome:
+    classifier:
+      _target_: sklearn.ensemble.RandomForestClassifier
+    
+    param_grid:
+      n_estimators:
+        - 100
+        - 200
+        - 300
+      max_depth:
+        - null
+        - 10
+        - 20
+  rewards:
+    regressor:
+      _target_: sklearn.ensemble.RandomForestRegressor
+      n_estimators: 100
+      max_depth: 10
+      random_state: 42  
+    param_grid:
+      n_estimators:
+        - 50
+        - 100
+        - 150
+      max_depth:
+        - null
+        - 10
+        - 20
+
+
+actions_outcomes:
+  actions_set: 
+    - A
+    - C
+
+  positive_actions_set:
+    - A
+
+  outcomes_set: ##Continuo
+    - Fully Repaid
+    - Partially Repaid
+    - Not Repaid
+
+  mapping:
+    Fully Repaid: Grant
+    Not Repaid: Not Grant
+    default: Grant lower
+
+actors: 
+  actor_list: 
+    - Patient
+    - Hospital_Admin
+    - NHA
+    - Oracle
+    - Causal_Model
+
+  reward_types: 
+    - Patient
+    - Hospital_Admin
+    - NHA
+
+augmentation_for_rewards:
+  augmentation_parameters:
+      actions_set: ${actions_outcomes.actions_set}
+      additional_arguments: []
+
+context:
+  feature_columns:
+    - Gender_M
+    - Region_Urban
+    - SmokingStatus_Smoker
+    - PhysicalActivity_Moderate
+    - PhysicalActivity_Sedentary
+    - Age
+
+  columns_to_display:
+    - Gender_M
+    - Region_Urban
+    - SmokingStatus_Smoker
+    - PhysicalActivity_Moderate
+    - PhysicalActivity_Sedentary
+    - Age
+    - Cost
+
+
+
+  

@@ -39,8 +39,12 @@ def main(cfg: DictConfig):
     df = df.iloc[0:cfg.sample_size]  # Limit data if needed for testing
 
     # Initialize RewardCalculator with reward types from configuration
-    reward_calculator = RewardCalculator(cfg.actors.reward_types)
+    # Dynamically instantiate the correct reward calculator
+    reward_calculator = instantiate(cfg.reward_calculator)
+
+    print(f"Initialized Reward Calculator: {reward_calculator}")
     df_ready = reward_calculator.compute_rewards(df)
+    print(f'df_ready:{df_ready.head()}')
 
     # Instantiate ranking criteria if needed (if create_ranking_criteria returns specific values)
     ranking_criteria = cfg.criteria.ranking_criteria

@@ -1,4 +1,4 @@
-class CaseMetrics:
+class LendingCaseMetrics:
     def __init__(self, suggestions_df, decision_col, true_outcome_col):
         if decision_col not in suggestions_df.columns or true_outcome_col not in suggestions_df.columns:
             raise ValueError(f"Columns {decision_col} or {true_outcome_col} not found in the DataFrame")

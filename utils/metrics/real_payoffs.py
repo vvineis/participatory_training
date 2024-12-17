@@ -10,7 +10,7 @@ class RealPayoffMetrics:
         self.decision_col = decision_col
         self.true_outcome_col = true_outcome_col
         self.reward_structures = reward_structures
-        self.positive_attribute_for_fairness = cfg.fairness.positive_attribute_for_fairness
+        self.positive_attribute_for_fairness = cfg.case_specific_metrics.positive_attribute_for_fairness
         self.actor = reward_actor
 
     def calculate_real_payoff(self, row):
