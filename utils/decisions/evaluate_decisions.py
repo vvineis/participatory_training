@@ -1,5 +1,6 @@
 import pandas as pd
 import random
+import numpy as np
 
 class SummaryProcessor:
     def __init__(self, cfg, metrics_calculator, strategy, seed=None):
@@ -14,84 +15,92 @@ class SummaryProcessor:
         self.decision_criteria_list = cfg.decision_criteria
         self.actions_set = cfg.actions_outcomes.actions_set
         self.outcomes_set = cfg.actions_outcomes.outcomes_set
-        self.strategy = strategy  # Use the provided strategy for computing actions
+        self.strategy=strategy
+        self.model_type = cfg.models.outcome.model_type 
         self.seed = seed
         self.mapping=cfg.actions_outcomes.mapping
         if self.seed is not None:
             random.seed(self.seed)
 
 
-    def create_summary_df(self, y_val_outcome, decisions_df, unscaled_X_val_reward, expected_rewards_list, clfr_pred_list):
- 
+    def create_summary_df(self, y_val_outcome, X_val_outcome, decisions_df, unscaled_X_val_reward, expected_rewards_list, pred_list):
         # Unscaled feature context with true outcomes
         feature_context_df = unscaled_X_val_reward.copy()
         feature_context_df['True Outcome'] = y_val_outcome.values
-
 
         # Pivot decision solutions to show best actions by decision type
         decision_solutions_summary = decisions_df.pivot(index='Row Index', columns='Decision Type', values='Best Action')
         summary_df = pd.concat([feature_context_df.reset_index(drop=True), decision_solutions_summary.reset_index(drop=True)], axis=1)
 
         # Initialize lists for suggested actions
-        suggested_actions = {actor: [] for actor in self.reward_types + ['Oracle', 'Classifier', 'Random']}
+        if self.model_type == 'classification':
+            suggested_actions = {actor: [] for actor in self.reward_types + ['Oracle', 'Outcome_Pred_Model', 'Random']}
+        elif self.model_type == 'regression':
+            suggested_actions = {actor: [] for actor in self.reward_types + ['Outcome_Pred_Model', 'Random']}
 
         # Compute suggested actions for each row
-        for idx, expected_rewards in enumerate(expected_rewards_list):
+        for idx, (expected_rewards, predicted_outcomes) in enumerate(zip(expected_rewards_list, pred_list)):
             # Use the strategy to compute individual actions for each actor
             individual_actions = self.strategy.compute(expected_rewards, disagreement_point=None, ideal_point=None, all_actions=self.actions_set)
             for actor in self.reward_types:
                 suggested_actions[actor].append(individual_actions[actor]['action'])
 
+            # Oracle and Outcome_Pred_Model suggested actions based on true outcomes and predictions
+            if self.model_type == 'classification':
+                suggested_actions['Oracle'].append(self._map_outcome_to_action(y_val_outcome.iloc[idx]))
+                suggested_actions['Outcome_Pred_Model'].append(self._map_outcome_to_action(pred_list[idx]))
+                
+            elif self.model_type == 'regression':
+                # Compute suggested actions for each row
+                # Extract the recovery times for actions
+                recovery_times = {action: value[0] for action, value in predicted_outcomes.items()}
+                # Determine the best action for Outcome_Pred_Model (e.g., minimize recovery time)
+                best_action = self._get_best_action_given_outcome(recovery_times, obj='min')
+                print(f'best_action {best_action}')
+                # Append the single best action for this row
+                suggested_actions['Outcome_Pred_Model'].append(best_action)
 
-            # Oracle and Classifier suggested actions based on true outcomes and predictions
-            suggested_actions['Oracle'].append(self._map_outcome_to_action(y_val_outcome.iloc[idx]))
-            suggested_actions['Classifier'].append(self._map_outcome_to_action(clfr_pred_list[idx]))
+                # Add a random action for comparison
             suggested_actions['Random'].append(self._get_random_action())
 
         # Add suggested actions to summary DataFrame
         for actor, actions in suggested_actions.items():
+            print(f"Actor: {actor}, Suggested Actions Length: {len(actions)}, Expected Length: {len(summary_df)}")
             summary_df[f'{actor} Suggested Action'] = actions
-
+        print(summary_df.head())
 
         return summary_df
     
     def _map_outcome_to_action(self, outcome):
-        """
-        Map outcomes to corresponding actions based on a configuration.
-
-        Args:
-            outcome (str): The outcome to map.
-            mapping (dict): The mapping configuration.
-
-        Returns:
-            str: The corresponding action.
-        """
         return self.mapping.get(outcome, self.mapping.get('default', 'Grant lower'))
     
     def _get_random_action(self):
         """Select a random action from the actions set."""
         return random.choice(list(self.actions_set))
+    
+    def _get_best_action_given_outcome(self, recovery_times, obj='min'):
+        if obj == 'min':
+            # Find the minimum value
+            min_value = min(recovery_times.values())
+            # Filter actions with the minimum value
+            best_actions = [action for action, value in recovery_times.items() if value == min_value]
+            # Favor action 'C' in case of a tie
+            return 'C' if 'C' in best_actions else best_actions[0]
+        elif obj == 'max':
+            # Find the maximum value
+            max_value = max(recovery_times.values())
+            # Filter actions with the maximum value
+            best_actions = [action for action, value in recovery_times.items() if value == max_value]
+            # Favor action 'C' in case of a tie
+            return 'C' if 'C' in best_actions else best_actions[0]
+        else:
+            raise ValueError(f"Unsupported objective: {obj}. Use 'min' or 'max'.")
 
     def metrics_to_dataframe(self, metrics):
         return pd.DataFrame([{'Actor/Criterion': k, **v} for k, v in metrics.items()])
 
 
     def _add_ranking_and_weighted_sum_of_normalized_scores(self, metrics_df, actor_criterion_col='Actor/Criterion'):
-        """
-        Add normalized columns, rank actors/criteria based on normalized metrics, and compute the weighted sum of normalized scores.
-
-        Args:
-            metrics_df (pd.DataFrame): DataFrame containing metrics for each actor or criterion.
-            ranking_criteria (dict): Mapping metric column names to ranking strategies ('max', 'min', 'zero').
-            ranking_weights (dict): Mapping metric column names to their respective weights.
-            metrics_for_evaluation (list): List of metrics to evaluate and compute the weighted sum.
-            actor_criterion_col (str): The name of the column to be used as the key in the output dictionary.
-
-        Returns:
-            ranked_df (pd.DataFrame): DataFrame with normalized columns, ranking columns, and weighted sum of normalized scores.
-            weighted_sum_dict (dict): Dictionary with Actor/Criterion as the key and the weighted sum as the value.
-            best_actor_criterion (str): The actor/criterion with the highest weighted sum of normalized scores.
-        """
         normalized_df = metrics_df.copy()
 
         # Verify ranking weights are correctly formatted
@@ -147,10 +156,10 @@ class SummaryProcessor:
         return normalized_df.sort_values(by='Weighted Normalized-Sum', ascending=False).reset_index(drop=True), weighted_sum_dict, best_actor_criterion
 
 
-    def process_decision_metrics(self, y_val_outcome, decisions_df, unscaled_X_val_reward, expected_rewards_list, clfr_pred_list):
+    def process_decision_metrics(self, y_val_outcome, X_val_outcome, decisions_df, unscaled_X_val_reward, expected_rewards_list, pred_list):
 
         # Create summary DataFrame
-        summary_df = self.create_summary_df(y_val_outcome, decisions_df, unscaled_X_val_reward, expected_rewards_list, clfr_pred_list)
+        summary_df = self.create_summary_df(y_val_outcome, X_val_outcome, decisions_df, unscaled_X_val_reward, expected_rewards_list, pred_list)
         
         # Calculate decision metrics using MetricsCalculator
         decision_metrics_df = self.metrics_to_dataframe(self.metrics_calculator.compute_all_metrics(summary_df, true_outcome_col='True Outcome'))

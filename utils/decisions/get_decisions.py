@@ -9,16 +9,8 @@ class DecisionProcessor:
         self.onehot_encoder = onehot_encoder
         self.cfg = cfg
         self.model_type = cfg.models.outcome.model_type
-        print(f"Outcome model: {self.outcome_model}")
-        print(f'model type: {self.model_type}')
-        if self.model_type == 'classification':
-            assert hasattr(self.outcome_model.classifier, "predict_proba"), \
-                "The underlying classifier must support `predict_proba` for classification."
 
     def encode_features(self, feature_context):
-        """
-        Encode numerical and categorical features, handling missing Outcome column.
-        """
         feature_columns = self.cfg.context.feature_columns
         categorical_columns = self.cfg.categorical_columns
 
@@ -51,13 +43,13 @@ class DecisionProcessor:
 
         actions_set = self.cfg.actions_outcomes.actions_set
         expected_rewards = {actor: {} for actor in self.reward_models.keys()}
-        predicted_class_list = []
+        predictions_list = []
 
         # Classification Case
         if self.model_type == 'classification':
             outcome_probs = self.outcome_model.classifier.predict_proba(feature_context)
             outcome_classes = self.outcome_model.classifier.classes_
-            predicted_class_list = [outcome_classes[np.argmax(prob)] for prob in outcome_probs]
+            predictions_list = [outcome_classes[np.argmax(prob)] for prob in outcome_probs]
 
             for action in actions_set:
                 for idx, outcome in enumerate(outcome_classes):
@@ -76,64 +68,41 @@ class DecisionProcessor:
                             expected_rewards[actor][action] = 0
                         expected_rewards[actor][action] += outcome_prob * reward
 
-        # Regression Case
+        # Regression Case to complete:
         elif self.model_type == 'regression':
-            predicted_outcome = self.outcome_model.predict(feature_context)
-            print(predicted_outcome)
+            predicted_outcomes_A, predicted_outcomes_C = self.outcome_model.predict_outcomes(feature_context)
+            for idx in range(len(feature_context)):
+                # Create a dictionary to store predictions for this row
+                row_predictions = {
+                    'A': [predicted_outcomes_A[idx]],
+                    'C': [predicted_outcomes_C[idx]]
+                }
+                predictions_list.append(row_predictions)
+                
             for action in actions_set:
-                context_with_action = feature_context.copy()
-
-                # Predict continuous outcome
-                
-                context_with_action['Action'] = action
-                context_with_action['Outcome'] = outcome
-                context_encoded_df_whole = self.encode_features(context_with_action)
+                # Select the appropriate predicted outcomes based on the action
+                predicted_outcomes = (
+                    predicted_outcomes_C if action == self.outcome_model.control_name else predicted_outcomes_A
+                )
 
                 for actor, model in self.reward_models.items():
-                    reward = model.predict(context_encoded_df_whole)[0]
 
-                    # Aggregate expected rewards (predicted_outcome as expected outcome)
-                    if action not in expected_rewards[actor]:
-                        expected_rewards[actor][action] = 0
-                    expected_rewards[actor][action] += predicted_outcome * reward
+                    # Add predicted outcomes as a feature for the reward model
+                    feature_context_with_action = feature_context.copy()
+                    feature_context_with_action['Action'] = action
+                    feature_context_with_action['Outcome'] = predicted_outcomes.flatten()
 
-        return expected_rewards, predicted_class_list
+                    # Encode features (including Outcome) for reward model
+                    context_encoded_df = self.encode_features(feature_context_with_action)
 
-    '''def compute_expected_reward(self, feature_context):
-        """
-        Compute expected rewards for all actors and actions.
-        """
-        feature_columns = self.cfg.context.feature_columns
-        feature_context = feature_context[feature_columns]
+                    # Predict rewards for this actor and action
+                    predicted_rewards = model.predict(context_encoded_df)
+                    #print(f"Predicted rewards for actor {actor}, action {action}: {predicted_rewards}")
 
-        # Predict probabilities for each possible outcome
-        outcome_probs = self.outcome_model.predict_proba(feature_context)
-        outcome_classes = self.outcome_model.classes_
-        predicted_class_list = [outcome_classes[np.argmax(prob)] for prob in outcome_probs]
+                    # Store expected rewards for this action
+                    expected_rewards[actor][action] = predicted_rewards[0]
 
-        expected_rewards = {actor: {} for actor in self.reward_models.keys()}
-        actions_set = self.cfg.actions_outcomes.actions_set
-
-        for action in actions_set:
-            for idx, outcome in enumerate(outcome_classes):
-                context_with_action_outcome = feature_context.copy()
-                context_with_action_outcome['Action'] = action
-                context_with_action_outcome['Outcome'] = outcome
-                
-                # Encode features
-                context_encoded_df = self.encode_features(context_with_action_outcome)
-
-                # Compute rewards for each actor
-                for actor, model in self.reward_models.items():
-                    reward = model.predict(context_encoded_df)[0]
-                    outcome_prob = outcome_probs[0][idx]
-
-                    # Aggregate expected rewards
-                    if action not in expected_rewards[actor]:
-                        expected_rewards[actor][action] = 0
-                    expected_rewards[actor][action] += outcome_prob * reward
-
-        return expected_rewards, predicted_class_list'''
+        return expected_rewards, predictions_list
 
     def get_decisions(self, X_val_or_test_reward):
         all_expected_rewards = []
@@ -153,7 +122,8 @@ class DecisionProcessor:
 
             all_expected_rewards.append(expected_rewards)
             all_decision_solutions.append(decision_solutions)
-            all_clfr_preds.extend(clfr_pred)
+            if clfr_pred is not None: 
+                all_clfr_preds.extend(clfr_pred)
 
         return all_expected_rewards, all_decision_solutions, all_clfr_preds, self._convert_decision_solutions_to_df(all_decision_solutions)
 

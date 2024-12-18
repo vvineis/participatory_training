@@ -96,8 +96,7 @@ actors:
     - Patient
     - Hospital_Admin
     - NHA
-    - Oracle
-    - Causal_Model
+    - Outcome_Pred_Model
 
   reward_types: 
     - Patient

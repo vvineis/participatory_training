@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+
 class FairnessMetrics:
     def __init__(self, cfg, suggestions_df, decision_col, outcome_col='True Outcome'):
         # Ensure the column exists in the DataFrame
@@ -48,15 +49,22 @@ class FairnessMetrics:
 
     def compute_demographic_parity(self):
         # Calculate demographic parity metrics
-        grant_parity = self._calculate_parity(self.actions_set[0], self.outcomes_set[0])
-        grant_lower_parity = self._calculate_parity(self.actions_set[1], self.outcomes_set[1])
-        positive_action_parity = grant_parity + grant_lower_parity
+        if len(self.actions_set)>2: 
+            first_pos_parity = self._calculate_parity(self.actions_set[0], self.outcomes_set[0])
+            second_pos_parity = self._calculate_parity(self.actions_set[1], self.outcomes_set[1])
+            positive_action_parity = first_pos_parity + second_pos_parity
 
-        return {
-            f'{self.actions_set[0]} Parity': grant_parity,
-            f'{self.actions_set[1]} Parity': grant_lower_parity,
-            'Positive Action Parity': positive_action_parity
-        }
+            return {
+                f'{self.actions_set[0]} Parity': first_pos_parity,
+                f'{self.actions_set[1]} Parity': second_pos_parity,
+                'Positive Action Parity': positive_action_parity
+            }
+        else: 
+            positive_action_parity = self._calculate_parity(self.actions_set[0], self.outcomes_set[0])
+
+            return {
+                'Positive Action Parity': positive_action_parity
+            }
 
     def compute_equal_opportunity(self):
         # Calculate equal opportunity metrics
@@ -126,6 +134,8 @@ class FairnessMetrics:
                 selected_metrics[metric] = available_metrics[metric]()
             else:
                 raise ValueError(f"Metric '{metric}' is not available. Choose from {list(available_metrics.keys())}.")
-
+        
+        print(f"selected_metrics {selected_metrics}")
+        print(f"fairness_metrics_list {fairness_metrics_list}")
         return selected_metrics
 

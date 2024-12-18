@@ -43,17 +43,8 @@ class OutcomeModel:
 
 class CausalOutcomeModel:
     def __init__(self, learner=None, control_name='C', random_state=111):
-        """
-        Initialize the Causal Outcome Model with an X-Learner.
-        :param learner: Base learner (e.g., XGBRegressor, RandomForestRegressor).
-        :param control_name: The name of the control group in the treatment column.
-        :param random_state: Random state for reproducibility.
-        """
         if learner is None:
             raise ValueError("Learner cannot be None for CausalOutcomeModel.")
-        if learner is None:
-            raise ValueError("Learner cannot be None for CausalOutcomeModel.")
-
         # Ensure learner is a class to instantiate dynamically
         self.learner_class = learner if isinstance(learner, type) else learner.__class__
         self.learner_instance = None  # Will be initialized in train
@@ -66,12 +57,10 @@ class CausalOutcomeModel:
         # Create a fresh learner and model
         # Dynamically initialize the learner instance
         self.learner_instance = self.learner_class(random_state=self.random_state, **hyperparams)
-        #print(f"Training learner with hyperparameters: {self.learner_instance.get_params()}")
- 
-        #print(f"Training learner with hyperparameters: {learner_instance.get_params()}")
         self.model = BaseXRegressor(learner=self.learner_instance, control_name=self.control_name)
-        
-        # Fit model
+        #print(f'X_train {X_train.head()}')
+        #print(f'treatment_train, {treatment_train.head()}')
+        #print(f'y_train {y_train}')
         self.model.fit(X=X_train, treatment=treatment_train, y=y_train)
         return self.model
 
@@ -95,16 +84,18 @@ class CausalOutcomeModel:
             predicted_outcome_A = np.round(predicted_outcome_C + cate, 0)
             predicted_outcomes_A.append(predicted_outcome_A)
 
+        #print(f'predicted_outcomes_C:{predicted_outcomes_C[0]}', f'predicted_outcomes_A:{predicted_outcomes_A[0]}')
+
         return np.array(predicted_outcomes_A), np.array(predicted_outcomes_C)
 
     def evaluate(self, X_test, treatment_test, y_test):
         # Predict outcomes
         predicted_outcomes_A, predicted_outcomes_C = self.predict_outcomes(X_test)
+        #print(f'Evaluation phase:\npredicted_outcomes_C:{predicted_outcomes_C[0]}', f'predicted_outcomes_A:{predicted_outcomes_A[0]}')
 
         # Convert to numpy for indexing
         actual_outcomes = y_test.values if hasattr(y_test, 'values') else np.array(y_test)
         actual_treatments = treatment_test.values if hasattr(treatment_test, 'values') else np.array(treatment_test)
-
         # Identify treated and control indices
         treated_indices = (actual_treatments == 'A')
         control_indices = (actual_treatments == 'C')

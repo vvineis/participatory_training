@@ -4,14 +4,7 @@ from sklearn.base import clone
 
 class RewardModels:
     def __init__(self, regressor_class, reward_types, **regressor_params):
-        """
-        Initialize reward models dynamically for the specified reward types.
 
-        Args:
-            regressor_class: Regressor class to use for models.
-            reward_types: List of reward types (e.g., ['Bank', 'Applicant', 'Regulatory']).
-            regressor_params: Parameters for the regressor.
-        """
         self.reward_types = reward_types
         self.regressors = {
             reward_type: clone(regressor_class).set_params(**regressor_params)
@@ -21,6 +14,7 @@ class RewardModels:
     def train(self, X_train, y_train_rewards):
         # Ensure feature names are strings
         X_train.columns = X_train.columns.astype(str)
+        #print(f'columns in X_train for rewards model: {X_train.columns}')
 
         trained_models = {}
         for reward_type, regressor in self.regressors.items():

@@ -100,7 +100,7 @@ actors:
     - Applicant
     - Regulatory
     - Oracle
-    - Classifier
+    - Outcome_Pred_Model
 
   reward_types: 
     - Bank 

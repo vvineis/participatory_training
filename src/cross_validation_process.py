@@ -109,14 +109,19 @@ class CrossValidator:
 
         for params in ParameterGrid(self.param_grid_outcome):
             outcome_model_class = self.get_model_class(self.cfg.models.outcome.model_class)
+            print(f'Applying tuning for {self.cfg.models.outcome.model_type} with model class {outcome_model_class }')
 
             # Dynamically initialize model
             if treatment_train is not None:  # For health use case (regression)
-                learner = instantiate(self.cfg.models.outcome.learner)  # Resolve learner
+                learner = instantiate(self.cfg.models.outcome.learner)  
+                print(f'Learner: {learner} should be XGBRegressor')
                 outcome_model = outcome_model_class(learner=learner)
+                print(f'outcome_model: {outcome_model}')
             else:  # For lending use case (classification)
                 classifier = instantiate(self.cfg.models.outcome.classifier)  # Resolve classifier
+                print(f'Classifier: {classifier} should be RandomForest')
                 outcome_model = outcome_model_class(classifier=classifier)
+                print(f'outcome_model: {outcome_model}')
 
             print(f"Trying parameters: {params}")
 
@@ -132,11 +137,14 @@ class CrossValidator:
                 score = outcome_model.evaluate(X_val, treatment_val, y_val)
             else:
                 score = outcome_model.evaluate(X_val, y_val)
+            
+            print(f'Current best score:{best_score}, current score {score}')
 
             # Update best score and model based on model type
             if (self.cfg.models.outcome.model_type == 'classification' and score > best_score) or \
             (self.cfg.models.outcome.model_type == 'regression' and score < best_score):
                 best_score, best_params, best_model = score, params, outcome_model
+        print(f'Finale best model: {best_model}')
 
         return best_params, best_model, best_score
 
@@ -204,13 +212,11 @@ class CrossValidator:
             
             # Unpack train and validation sets for the fold
             X_train_outcome, treatment_train, y_train_outcome = fold_dict['train_outcome']
-            print(f'X_train_outcome {X_train_outcome.columns}')
-            print(f'treatment_train {treatment_train}')
-            print(f'y_train_outcome {y_train_outcome}')
+            #print(f'X_train_outcome {X_train_outcome.columns}')
+            #print(f'treatment_train {treatment_train}')
+            #print(f'y_train_outcome {y_train_outcome}')
             X_val_outcome, treatment_val, y_val_outcome = fold_dict['val_or_test_outcome']
-           # X_train_reward, y_train_bank, y_train_applicant, y_train_regulatory = fold_dict['train_reward']
-           # X_val_reward, y_val_bank, y_val_applicant, y_val_regulatory = fold_dict['val_or_test_reward']
-            # Access rewards as dictionaries
+
             X_train_reward, y_train_rewards = fold_dict['train_reward']
             X_val_reward, y_val_rewards = fold_dict['val_or_test_reward']
 
@@ -220,21 +226,16 @@ class CrossValidator:
                 X_train_outcome, treatment_train, y_train_outcome, 
                 X_val_outcome,treatment_val, y_val_outcome
             )
-            print(f'best_model_outcome{best_model_outcome}')
+
             self.best_hyperparams_outcome_per_fold.append(best_params_outcome)
             self.best_outcome_models_per_fold.append(best_model_outcome)
             self.fold_scores_outcome.append(best_score_outcome)
 
             # Tune reward models
-            # Tune reward models
             best_params_reward, best_models_reward, best_score_reward = self.tune_reward_models(
                 X_train_reward, y_train_rewards, X_val_reward, y_val_rewards
             )
             
-            #best_params_reward, best_models_reward, best_score_reward = self.tune_reward_models(
-               # X_train_reward, y_train_bank, y_train_applicant, y_train_regulatory,
-               # X_val_reward, y_val_bank, y_val_applicant, y_val_regulatory
-            #)
             self.best_hyperparams_reward_per_fold.append(best_params_reward)
             self.best_reward_models_per_fold.append(best_models_reward)
             self.fold_scores_reward.append(best_score_reward)
@@ -249,15 +250,16 @@ class CrossValidator:
             )
             
             # Get decisions from the decision processor
-            all_expected_rewards, all_decisions, all_clsf_pred, decisions_df = decision_processor.get_decisions(X_val_reward)
+            all_expected_rewards, all_decisions, all_predictions, decisions_df = decision_processor.get_decisions(X_val_reward)
 
             # Summarize and rank decision metrics for the current fold
             result = self.summary_processor.process_decision_metrics(
                 y_val_outcome=y_val_outcome,
+                X_val_outcome=X_val_outcome,
                 decisions_df=decisions_df,
                 unscaled_X_val_reward=fold_dict['unscaled_val_or_test_set'],
                 expected_rewards_list=all_expected_rewards,
-                clfr_pred_list=all_clsf_pred,
+                pred_list=all_predictions
             )
 
             # Store fold results for later aggregation
