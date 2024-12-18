@@ -135,7 +135,7 @@ class FairnessMetrics:
             else:
                 raise ValueError(f"Metric '{metric}' is not available. Choose from {list(available_metrics.keys())}.")
         
-        print(f"selected_metrics {selected_metrics}")
-        print(f"fairness_metrics_list {fairness_metrics_list}")
+        #print(f"selected_metrics {selected_metrics}")
+        #print(f"fairness_metrics_list {fairness_metrics_list}")
         return selected_metrics
 
