@@ -1,5 +1,5 @@
 class LendingCaseMetrics:
-    def __init__(self, suggestions_df, decision_col, true_outcome_col):
+    def __init__(self, suggestions_df, decision_col, true_outcome_col, cfg=None):
         if decision_col not in suggestions_df.columns or true_outcome_col not in suggestions_df.columns:
             raise ValueError(f"Columns {decision_col} or {true_outcome_col} not found in the DataFrame")
         
@@ -58,3 +58,49 @@ class LendingCaseMetrics:
                 raise ValueError(f"Metric '{metric}' is not available. Choose from {list(available_metrics.keys())}.")
 
         return selected_metrics
+
+class HealthCaseMetrics:
+    def __init__(self, suggestions_df, decision_col, true_outcome_col, cfg):
+        if decision_col not in suggestions_df.columns or true_outcome_col not in suggestions_df.columns:
+            raise ValueError(f"Columns {decision_col} or {true_outcome_col} not found in the DataFrame")
+        
+        self.suggestions_df = suggestions_df
+        self.decision_col = decision_col
+        self.true_outcome_col = true_outcome_col
+        self.cfg = cfg
+
+    def compute_total_cost(self):
+        # Ensure the decision column is valid
+        if self.decision_col not in self.suggestions_df.columns:
+            raise ValueError(f"Decision column {self.decision_col} not found in the DataFrame")
+        
+        # Compute total cost
+        total_cost = 0
+        for decision, group in self.suggestions_df.groupby(self.decision_col):
+            # Get the base cost for the current decision
+            base_cost = self.cfg.reward_calculator.base_cost.get(decision, 0)  # Default to 0 if not found
+            
+            # Sum up the cost for all rows with this decision
+            total_cost += base_cost * len(group)
+        
+        return total_cost
+    
+    def compute_all_metrics(self):
+        return {
+            'Total Cost': self.compute_total_cost()}
+    
+    def get_metrics(self, case_metrics_list):
+        available_metrics = {
+            'Total Cost': self.compute_total_profit,
+        }
+
+        selected_metrics = {}
+        for metric in case_metrics_list:
+            if metric in available_metrics:
+                selected_metrics[metric] = available_metrics[metric]()
+            else:
+                raise ValueError(f"Metric '{metric}' is not available. Choose from {list(available_metrics.keys())}.")
+
+        return selected_metrics
+        
+

@@ -3,6 +3,9 @@ from utils.metrics.fairness_metrics import FairnessMetrics
 from utils.metrics.real_payoffs import RealPayoffMetrics
 from utils.rewards.get_rewards import RewardCalculator
 from hydra.utils import instantiate
+from utils.metrics.case_specific_metrics import HealthCaseMetrics
+
+
 
 
 def load_case_metrics_module(cfg, suggestions_df, decision_col, true_outcome_col):
@@ -13,6 +16,7 @@ def load_case_metrics_module(cfg, suggestions_df, decision_col, true_outcome_col
             suggestions_df=suggestions_df,
             decision_col=decision_col,
             true_outcome_col=true_outcome_col,
+            cfg=cfg
         )
         return case_metrics_module
     except Exception as e:
@@ -44,18 +48,24 @@ class MetricsCalculator:
 
             # Fairness Metrics: Cache results for each decision column
             if decision_col not in fairness_cache:
-                fairness_calculator = FairnessMetrics(cfg=self.cfg, suggestions_df=suggestions_df, decision_col=decision_col)
+                if self.cfg.models.outcome.model_type == 'classification':
+                    fairness_calculator = FairnessMetrics(cfg=self.cfg, suggestions_df=suggestions_df, decision_col=decision_col)
+                    actor_metrics_calculator = load_case_metrics_module(
+                    self.cfg, suggestions_df, decision_col, true_outcome_col)
+
+                else:
+                    suggestions_df['True_Outcome_Binary'] = (suggestions_df['True Outcome'] <= self.cfg.case_specific_metrics.threshold_outcome).astype(int)
+                    fairness_calculator = FairnessMetrics(cfg=self.cfg, suggestions_df=suggestions_df, decision_col=decision_col, outcome_col='True_Outcome_Binary')
+                    actor_metrics_calculator = HealthCaseMetrics(suggestions_df, decision_col, true_outcome_col, self.cfg)
+                
                 fairness_cache[decision_col] = fairness_calculator.get_metrics(self.cfg.fairness.fairness_metrics)
+                print(f'case_metrics:{actor_metrics_calculator}')
 
             # Action Counts: Cache action percentages for efficiency
             if decision_col not in action_counts_cache:
                 action_counts_cache[decision_col] = suggestions_df[decision_col].value_counts(normalize=True).to_dict()
 
             # Instantiate the class
-            actor_metrics_calculator = load_case_metrics_module(
-                self.cfg, suggestions_df, decision_col, true_outcome_col
-            )
-
             for metric in self.cfg.case_specific_metrics.metrics:
                 if metric == 'Total Profit':
                     metrics[actor][metric] = actor_metrics_calculator.compute_total_profit()
@@ -63,6 +73,8 @@ class MetricsCalculator:
                     metrics[actor][metric] = actor_metrics_calculator.compute_unexploited_profit()
                 elif metric == 'Total Loss':
                     metrics[actor][metric] = actor_metrics_calculator.compute_total_loss()
+                elif metric == 'Total Cost':
+                    metrics[actor][metric] = actor_metrics_calculator.compute_total_cost()
 
             # Standard Metrics
             standard_metrics_calculator = StandardMetrics(

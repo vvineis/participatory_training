@@ -49,7 +49,7 @@ class FairnessMetrics:
 
     def compute_demographic_parity(self):
         # Calculate demographic parity metrics
-        if len(self.actions_set)>2: 
+        if len(self.actions_set)>2: # adapt to more actions
             first_pos_parity = self._calculate_parity(self.actions_set[0], self.outcomes_set[0])
             second_pos_parity = self._calculate_parity(self.actions_set[1], self.outcomes_set[1])
             positive_action_parity = first_pos_parity + second_pos_parity
@@ -68,46 +68,70 @@ class FairnessMetrics:
 
     def compute_equal_opportunity(self):
         # Calculate equal opportunity metrics
-        tpr_fully_repaid_parity = self._calculate_parity(self.actions_set[0], self.outcomes_set[0])
-        tpr_partially_repaid_parity = self._calculate_parity(self.actions_set[1], self.outcomes_set[1])
-        
-        tpr_positive_outcome_parity = (
-            np.nanmean([tpr_fully_repaid_parity, tpr_partially_repaid_parity])
-        ) if not any(np.isnan([tpr_fully_repaid_parity, tpr_partially_repaid_parity])) else np.nan
+        if len(self.actions_set)>2:
+            tpr_fully_repaid_parity = self._calculate_parity(self.actions_set[0], self.outcomes_set[0])
+            tpr_partially_repaid_parity = self._calculate_parity(self.actions_set[1], self.outcomes_set[1])
+            
+            tpr_positive_outcome_parity = (
+                np.nanmean([tpr_fully_repaid_parity, tpr_partially_repaid_parity])
+            ) if not any(np.isnan([tpr_fully_repaid_parity, tpr_partially_repaid_parity])) else np.nan
 
-        return {
-            f'TPR {self.outcomes_set[0]} Parity': tpr_fully_repaid_parity,
-            f'TPR {self.outcomes_set[1]} Parity': tpr_partially_repaid_parity,
-            'TPR Positive Outcome Parity': tpr_positive_outcome_parity
-        }
+            return {
+                f'TPR {self.outcomes_set[0]} Parity': tpr_fully_repaid_parity,
+                f'TPR {self.outcomes_set[1]} Parity': tpr_partially_repaid_parity,
+                'TPR Positive Outcome Parity': tpr_positive_outcome_parity
+            }
+        else:
+            tpr_positive_outcome_parity = self._calculate_parity(self.actions_set[0], self.outcomes_set[0])
+
+            return {
+                'TPR Positive Outcome Parity': tpr_positive_outcome_parity}
+
 
     def compute_equalized_odds(self):
-        # Calculate equalized odds metrics
-        fully_repaid_equalized_odds = self._calculate_odds_difference(self.actions_set[0], self.outcomes_set[0], self.outcomes_set[2])
-        partially_repaid_equalized_odds = self._calculate_odds_difference(self.actions_set[1], self.outcomes_set[1], self.outcomes_set[2])
+        if len(self.actions_set)>2:
+            # Calculate equalized odds metrics
+            fully_repaid_equalized_odds = self._calculate_odds_difference(self.actions_set[0], self.outcomes_set[0], self.outcomes_set[2])
+            partially_repaid_equalized_odds = self._calculate_odds_difference(self.actions_set[1], self.outcomes_set[1], self.outcomes_set[2])
 
-        average_equalized_odds = (
-            np.nanmean([fully_repaid_equalized_odds, partially_repaid_equalized_odds])
-        ) if not any(np.isnan([fully_repaid_equalized_odds, partially_repaid_equalized_odds])) else np.nan
+            average_equalized_odds = (
+                np.nanmean([fully_repaid_equalized_odds, partially_repaid_equalized_odds])
+            ) if not any(np.isnan([fully_repaid_equalized_odds, partially_repaid_equalized_odds])) else np.nan
 
-        return {
-            f'Equalized Odds {self.outcomes_set[0]}': fully_repaid_equalized_odds,
-            f'Equalized Odds {self.outcomes_set[1]}': partially_repaid_equalized_odds,
-            'Average Equalized Odds': average_equalized_odds
-        }
+            return {
+                f'Equalized Odds {self.outcomes_set[0]}': fully_repaid_equalized_odds,
+                f'Equalized Odds {self.outcomes_set[1]}': partially_repaid_equalized_odds,
+                'Average Equalized Odds': average_equalized_odds
+            }
+        else:
+            # Calculate equalized odds metrics
+            pos_outcome_equalized_odds = self._calculate_odds_difference(self.actions_set[0], self.outcomes_set[0], self.outcomes_set[1])
+
+            return {
+                f'Equalized Odds {self.outcomes_set[0]}': pos_outcome_equalized_odds
+            }
+            
 
     def compute_calibration(self):
+         if len(self.actions_set)>2:
         # Calculate calibration metrics
-        grant_calibration = self._calculate_parity(self.actions_set[0], self.outcomes_set[0])
-        grant_lower_calibration = self._calculate_parity(self.actions_set[1], self.outcomes_set[1])
+            grant_calibration = self._calculate_parity(self.actions_set[0], self.outcomes_set[0])
+            grant_lower_calibration = self._calculate_parity(self.actions_set[1], self.outcomes_set[1])
 
-        average_calibration = np.nanmean([grant_calibration, grant_lower_calibration])
+            average_calibration = np.nanmean([grant_calibration, grant_lower_calibration])
 
-        return {
-            f'{self.actions_set[0]} Calibration ({self.outcomes_set[0]})': grant_calibration,
-            f'{self.actions_set[1]} Calibration ({self.outcomes_set[1]})': grant_lower_calibration,
-            'Average Calibration': average_calibration
-        }
+            return {
+                f'{self.actions_set[0]} Calibration ({self.outcomes_set[0]})': grant_calibration,
+                f'{self.actions_set[1]} Calibration ({self.outcomes_set[1]})': grant_lower_calibration,
+                'Average Calibration': average_calibration
+            }
+         else:
+            # Calculate calibration metrics
+            pos_outcome_calibration = self._calculate_parity(self.actions_set[0], self.outcomes_set[0])
+
+            return {
+                f'{self.actions_set[0]} Calibration ({self.outcomes_set[0]})': pos_outcome_calibration
+            }
 
     def _calculate_parity(self, decision, outcome):
         # Calculate parity for a given decision-outcome pair
@@ -135,7 +159,8 @@ class FairnessMetrics:
             else:
                 raise ValueError(f"Metric '{metric}' is not available. Choose from {list(available_metrics.keys())}.")
         
-        #print(f"selected_metrics {selected_metrics}")
-        #print(f"fairness_metrics_list {fairness_metrics_list}")
+        print(f"selected_metrics {selected_metrics}")
+        print(f"fairness_metrics_list {fairness_metrics_list}")
+
         return selected_metrics
 

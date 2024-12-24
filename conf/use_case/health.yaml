@@ -19,6 +19,8 @@ criteria:
     - Calibration_Worst
     - Total Cost
     - Accuracy
+  
+
 
   ranking_weights:
     Demographic Parity_Worst: 0.2
@@ -30,13 +32,14 @@ criteria:
 
 case_specific_metrics: 
   metrics: 
-    - Total Cost
+    - 'Total Cost'
 
-  case_specific_metrics_module:  #Modificare
+  case_specific_metrics_module: 
     _target_: utils.metrics.case_specific_metrics.HealthCaseMetrics
   
   positive_attribute_for_fairness: 'Region_Urban'
   positive_group_value: 1
+  threshold_outcome: 6
 
 reward_calculator:
   _target_: utils.rewards.get_rewards.HealthRewardCalculator
@@ -81,10 +84,10 @@ actions_outcomes:
   positive_actions_set:
     - A
 
-  outcomes_set: ##Continuo
-    - Fully Repaid
-    - Partially Repaid
-    - Not Repaid
+  outcomes_set: #binarized outcome set based on the threshold
+   - 1
+   - 0
+
 
   mapping:
     Fully Repaid: Grant

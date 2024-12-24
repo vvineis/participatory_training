@@ -56,7 +56,7 @@ class SummaryProcessor:
                 recovery_times = {action: value[0] for action, value in predicted_outcomes.items()}
                 # Determine the best action for Outcome_Pred_Model (e.g., minimize recovery time)
                 best_action = self._get_best_action_given_outcome(recovery_times, obj='min')
-                print(f'best_action {best_action}')
+                #print(f'best_action {best_action}')
                 # Append the single best action for this row
                 suggested_actions['Outcome_Pred_Model'].append(best_action)
 
@@ -65,10 +65,11 @@ class SummaryProcessor:
 
         # Add suggested actions to summary DataFrame
         for actor, actions in suggested_actions.items():
-            print(f"Actor: {actor}, Suggested Actions Length: {len(actions)}, Expected Length: {len(summary_df)}")
+            #print(f"Actor: {actor}, Suggested Actions Length: {len(actions)}, Expected Length: {len(summary_df)}")
             summary_df[f'{actor} Suggested Action'] = actions
-        print(summary_df.head())
-
+        #print the first rows of the last ten columns of summary_df
+        print(summary_df.columns)
+        
         return summary_df
     
     def _map_outcome_to_action(self, outcome):
