@@ -23,14 +23,34 @@ class SummaryProcessor:
             random.seed(self.seed)
 
 
-    def create_summary_df(self, y_val_outcome, X_val_outcome, decisions_df, unscaled_X_val_reward, expected_rewards_list, pred_list):
+    def create_summary_df(self, y_val_outcome, X_val_outcome, treatment_val, decisions_df, unscaled_X_val_reward, expected_rewards_list, pred_list):
         # Unscaled feature context with true outcomes
         feature_context_df = unscaled_X_val_reward.copy()
         feature_context_df['True Outcome'] = y_val_outcome.values
-
+        feature_context_df['Real Treatment'] = treatment_val.values if treatment_val is not None else None 
+        
         # Pivot decision solutions to show best actions by decision type
         decision_solutions_summary = decisions_df.pivot(index='Row Index', columns='Decision Type', values='Best Action')
         summary_df = pd.concat([feature_context_df.reset_index(drop=True), decision_solutions_summary.reset_index(drop=True)], axis=1)
+
+        if self.model_type=='regression':
+            actions_set = pred_list[0].keys()  # Assuming all elements in pred_list have the same keys
+            for action in  actions_set:
+                predicted_column_name = f"{action}_predicted_outcome"
+                summary_df[predicted_column_name] = [
+                float(clfr_pred[action][0]) if action in clfr_pred else np.nan
+                for clfr_pred in pred_list
+                ]
+            summary_df['A_outcome'] = summary_df.apply(
+                lambda row: row['True Outcome'] if row['Real Treatment'] == 'A' else row['A_predicted_outcome'], axis=1
+            )
+
+            summary_df['C_outcome'] = summary_df.apply( 
+                lambda row: row['True Outcome'] if row['Real Treatment'] == 'C' else row['C_predicted_outcome'], axis=1
+            )
+        
+            #print(summary_df[['Real Treatment', 'True Outcome', 'A_predicted_outcome', 'C_predicted_outcome', 'A_outcome', 'C_outcome']].head())
+
 
         # Initialize lists for suggested actions
         if self.model_type == 'classification':
@@ -157,10 +177,10 @@ class SummaryProcessor:
         return normalized_df.sort_values(by='Weighted Normalized-Sum', ascending=False).reset_index(drop=True), weighted_sum_dict, best_actor_criterion
 
 
-    def process_decision_metrics(self, y_val_outcome, X_val_outcome, decisions_df, unscaled_X_val_reward, expected_rewards_list, pred_list):
+    def process_decision_metrics(self, y_val_outcome, X_val_outcome, treatment_val,  decisions_df, unscaled_X_val_reward, expected_rewards_list, pred_list):
 
         # Create summary DataFrame
-        summary_df = self.create_summary_df(y_val_outcome, X_val_outcome, decisions_df, unscaled_X_val_reward, expected_rewards_list, pred_list)
+        summary_df = self.create_summary_df(y_val_outcome, X_val_outcome,  treatment_val, decisions_df, unscaled_X_val_reward, expected_rewards_list, pred_list)
         
         # Calculate decision metrics using MetricsCalculator
         decision_metrics_df = self.metrics_to_dataframe(self.metrics_calculator.compute_all_metrics(summary_df, true_outcome_col='True Outcome'))

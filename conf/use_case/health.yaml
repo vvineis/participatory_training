@@ -33,6 +33,7 @@ criteria:
 case_specific_metrics: 
   metrics: 
     - 'Total Cost'
+    - 'Avg_no_recovery_weeks'
 
   case_specific_metrics_module: 
     _target_: utils.metrics.case_specific_metrics.HealthCaseMetrics

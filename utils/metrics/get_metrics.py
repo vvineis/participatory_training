@@ -3,7 +3,7 @@ from utils.metrics.fairness_metrics import FairnessMetrics
 from utils.metrics.real_payoffs import RealPayoffMetrics
 from utils.rewards.get_rewards import RewardCalculator
 from hydra.utils import instantiate
-from utils.metrics.case_specific_metrics import HealthCaseMetrics
+from utils.metrics.case_specific_metrics import HealthCaseMetrics, LendingCaseMetrics
 
 
 
@@ -50,22 +50,28 @@ class MetricsCalculator:
             if decision_col not in fairness_cache:
                 if self.cfg.models.outcome.model_type == 'classification':
                     fairness_calculator = FairnessMetrics(cfg=self.cfg, suggestions_df=suggestions_df, decision_col=decision_col)
-                    actor_metrics_calculator = load_case_metrics_module(
-                    self.cfg, suggestions_df, decision_col, true_outcome_col)
+                    actor_metrics_calculator = LendingCaseMetrics(
+                    suggestions_df, decision_col, true_outcome_col)
 
                 else:
-                    suggestions_df['True_Outcome_Binary'] = (suggestions_df['True Outcome'] <= self.cfg.case_specific_metrics.threshold_outcome).astype(int)
+                    for action in self.cfg.actions_outcomes.actions_set:
+                        suggestions_df[f"{action}_predicted_outcome_binary"] = (
+                        suggestions_df[f"{action}_predicted_outcome"] <= self.cfg.case_specific_metrics.threshold_outcome
+                            ).astype(int)
                     fairness_calculator = FairnessMetrics(cfg=self.cfg, suggestions_df=suggestions_df, decision_col=decision_col, outcome_col='True_Outcome_Binary')
                     actor_metrics_calculator = HealthCaseMetrics(suggestions_df, decision_col, true_outcome_col, self.cfg)
                 
                 fairness_cache[decision_col] = fairness_calculator.get_metrics(self.cfg.fairness.fairness_metrics)
                 print(f'case_metrics:{actor_metrics_calculator}')
+                print(f'fairness_metrics:{fairness_cache[decision_col]}')
+
 
             # Action Counts: Cache action percentages for efficiency
             if decision_col not in action_counts_cache:
                 action_counts_cache[decision_col] = suggestions_df[decision_col].value_counts(normalize=True).to_dict()
 
             # Instantiate the class
+            print(self.cfg.case_specific_metrics.metrics)
             for metric in self.cfg.case_specific_metrics.metrics:
                 if metric == 'Total Profit':
                     metrics[actor][metric] = actor_metrics_calculator.compute_total_profit()
@@ -75,6 +81,9 @@ class MetricsCalculator:
                     metrics[actor][metric] = actor_metrics_calculator.compute_total_loss()
                 elif metric == 'Total Cost':
                     metrics[actor][metric] = actor_metrics_calculator.compute_total_cost()
+                elif metric=='Avg_no_recovery_weeks':
+                    metrics[actor][metric] = actor_metrics_calculator.compute_avg_no_recovery_weeks()
+            print(f'case_metrics:{metrics[actor]}')
 
             # Standard Metrics
             standard_metrics_calculator = StandardMetrics(
@@ -88,11 +97,15 @@ class MetricsCalculator:
 
             # Fairness Metrics: Retrieve from cache and dynamically update based on actions and outcomes
             fairness_metrics = fairness_cache[decision_col]
+            # After computing fairness metrics
+            print(f"Fairness metrics for actor: {actor}")
+            print(f"Demographic Parity: {fairness_metrics.get('Demographic Parity')}")
+            print(f"Equal Opportunity: {fairness_metrics.get('Equal Opportunity')}")
             for metric_name, metric_values in fairness_metrics.items():
                 for key, value in metric_values.items():
                     metrics[actor][f'{metric_name}_{key}'] = value
 
-            # Retrieve all positive action parities dynamically
+            '''# Retrieve all positive action parities dynamically
             positive_actions = self.cfg.actions_outcomes.positive_actions_set  # List of positive actions
             positive_action_parities = []
 
@@ -119,7 +132,7 @@ class MetricsCalculator:
             metrics[actor]['Calibration_Worst'] = self._compute_max_min_fairness(
                 fairness_metrics['Calibration'].get(f'{self.cfg.actions_outcomes.positive_actions_set[0]} Calibration ({self.cfg.actions_outcomes.outcomes_set[0]})'),
                 fairness_metrics['Calibration'].get(f'{self.cfg.actions_outcomes.positive_actions_set[1]} Calibration ({self.cfg.actions_outcomes.outcomes_set[1]})')
-            )
+            )'''
 
             # Action Percentages: Retrieve from cache and dynamically update per actor
             action_counts = action_counts_cache[decision_col]

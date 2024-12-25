@@ -212,9 +212,6 @@ class CrossValidator:
             
             # Unpack train and validation sets for the fold
             X_train_outcome, treatment_train, y_train_outcome = fold_dict['train_outcome']
-            #print(f'X_train_outcome {X_train_outcome.columns}')
-            #print(f'treatment_train {treatment_train}')
-            #print(f'y_train_outcome {y_train_outcome}')
             X_val_outcome, treatment_val, y_val_outcome = fold_dict['val_or_test_outcome']
 
             X_train_reward, y_train_rewards = fold_dict['train_reward']
@@ -251,16 +248,21 @@ class CrossValidator:
             
             # Get decisions from the decision processor
             all_expected_rewards, all_decisions, all_predictions, decisions_df = decision_processor.get_decisions(X_val_reward)
+            #print(decisions_df.head())
+            #print(decisions_df.columns)
 
             # Summarize and rank decision metrics for the current fold
             result = self.summary_processor.process_decision_metrics(
                 y_val_outcome=y_val_outcome,
                 X_val_outcome=X_val_outcome,
+                treatment_val=treatment_val,
                 decisions_df=decisions_df,
                 unscaled_X_val_reward=fold_dict['unscaled_val_or_test_set'],
                 expected_rewards_list=all_expected_rewards,
                 pred_list=all_predictions
             )
+           # print(f'summary_df {result['summary_df'].head()}, {lt['summary_df'].columns}')
+            #print(f'decision_metrics_df {result['decision_metrics_df'].head()}, {result['decision_metrics_df'].columns}')
 
             # Store fold results for later aggregation
             all_fold_summaries.append(result['summary_df'])

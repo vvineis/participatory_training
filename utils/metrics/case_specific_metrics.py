@@ -85,13 +85,31 @@ class HealthCaseMetrics:
         
         return total_cost
     
+    def compute_avg_no_recovery_weeks(self):
+        # Compute the average no recovery weeks based on the decision
+        if 'A_outcome' not in self.suggestions_df.columns or 'C_outcome' not in self.suggestions_df.columns:
+            raise ValueError("Columns 'A_outcome' or 'C_outcome' not found in the DataFrame")
+
+        # Select the appropriate outcome column based on the decision
+        self.suggestions_df['Selected_Outcome'] = self.suggestions_df.apply(
+            lambda row: row['A_outcome'] if row[self.decision_col] == 'A' else row['C_outcome'], axis=1
+        )
+
+        # Compute the average no recovery weeks
+        avg_no_recovery_weeks = self.suggestions_df['Selected_Outcome'].mean()
+
+        return avg_no_recovery_weeks
+
     def compute_all_metrics(self):
         return {
-            'Total Cost': self.compute_total_cost()}
+            'Total Cost': self.compute_total_cost(),
+            'Avg_no_recovery_weeks': self.compute_avg_no_recovery_weeks(),
+        }
     
     def get_metrics(self, case_metrics_list):
         available_metrics = {
-            'Total Cost': self.compute_total_profit,
+            'Total Cost': self.compute_total_cost,
+            'Avg_no_recovery_weeks': self.compute_avg_no_recovery_weeks,
         }
 
         selected_metrics = {}
@@ -100,7 +118,7 @@ class HealthCaseMetrics:
                 selected_metrics[metric] = available_metrics[metric]()
             else:
                 raise ValueError(f"Metric '{metric}' is not available. Choose from {list(available_metrics.keys())}.")
-
-        return selected_metrics
         
+        return selected_metrics
+    
 

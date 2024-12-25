@@ -124,6 +124,7 @@ class DecisionProcessor:
             all_decision_solutions.append(decision_solutions)
             if clfr_pred is not None: 
                 all_clfr_preds.extend(clfr_pred)
+            #print(f'clfr_pred {clfr_pred}')
 
         return all_expected_rewards, all_decision_solutions, all_clfr_preds, self._convert_decision_solutions_to_df(all_decision_solutions)
 
