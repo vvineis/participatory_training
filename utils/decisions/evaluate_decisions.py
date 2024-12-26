@@ -33,7 +33,7 @@ class SummaryProcessor:
         decision_solutions_summary = decisions_df.pivot(index='Row Index', columns='Decision Type', values='Best Action')
         summary_df = pd.concat([feature_context_df.reset_index(drop=True), decision_solutions_summary.reset_index(drop=True)], axis=1)
 
-        if self.model_type=='regression':
+        if self.model_type=='causal_regression':
             actions_set = pred_list[0].keys()  # Assuming all elements in pred_list have the same keys
             for action in  actions_set:
                 predicted_column_name = f"{action}_predicted_outcome"
@@ -55,7 +55,7 @@ class SummaryProcessor:
         # Initialize lists for suggested actions
         if self.model_type == 'classification':
             suggested_actions = {actor: [] for actor in self.reward_types + ['Oracle', 'Outcome_Pred_Model', 'Random']}
-        elif self.model_type == 'regression':
+        elif self.model_type == 'causal_regression':
             suggested_actions = {actor: [] for actor in self.reward_types + ['Outcome_Pred_Model', 'Random']}
 
         # Compute suggested actions for each row
@@ -70,7 +70,7 @@ class SummaryProcessor:
                 suggested_actions['Oracle'].append(self._map_outcome_to_action(y_val_outcome.iloc[idx]))
                 suggested_actions['Outcome_Pred_Model'].append(self._map_outcome_to_action(pred_list[idx]))
                 
-            elif self.model_type == 'regression':
+            elif self.model_type == 'causal_regression':
                 # Compute suggested actions for each row
                 # Extract the recovery times for actions
                 recovery_times = {action: value[0] for action, value in predicted_outcomes.items()}
@@ -88,7 +88,7 @@ class SummaryProcessor:
             #print(f"Actor: {actor}, Suggested Actions Length: {len(actions)}, Expected Length: {len(summary_df)}")
             summary_df[f'{actor} Suggested Action'] = actions
         #print the first rows of the last ten columns of summary_df
-        print(summary_df.columns)
+        print(f' summ_df: {summary_df.columns}')
         
         return summary_df
     
@@ -97,6 +97,7 @@ class SummaryProcessor:
     
     def _get_random_action(self):
         """Select a random action from the actions set."""
+
         return random.choice(list(self.actions_set))
     
     def _get_best_action_given_outcome(self, recovery_times, obj='min'):

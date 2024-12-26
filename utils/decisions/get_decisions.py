@@ -69,7 +69,7 @@ class DecisionProcessor:
                         expected_rewards[actor][action] += outcome_prob * reward
 
         # Regression Case to complete:
-        elif self.model_type == 'regression':
+        elif self.model_type == 'causal_regression':
             predicted_outcomes_A, predicted_outcomes_C = self.outcome_model.predict_outcomes(feature_context)
             for idx in range(len(feature_context)):
                 # Create a dictionary to store predictions for this row

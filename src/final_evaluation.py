@@ -92,6 +92,7 @@ def run_final_evaluation(data_processor, cv_results, all_train_set, test_set, cf
     test_results_dict = summary_processor.process_decision_metrics(
         y_val_outcome=y_test_outcome,
         X_val_outcome=X_test_outcome,
+        treatment_val=treatment_test,
         decisions_df=decisions_df,
         unscaled_X_val_reward=final_training_data['unscaled_val_or_test_set'],
         expected_rewards_list=all_expected_rewards,

@@ -5,28 +5,28 @@ result_path: "C:/Users/Vittoria/Documents/GitHub/participatory_training/results/
 
 criteria:
   ranking_criteria:
-    Demographic Parity_Worst: zero
-    Equal Opportunity_Worst: zero
-    Equalized Odds_Worst: zero
-    Calibration_Worst: zero
+    Demographic Parity: zero
+    Equal Opportunity: zero
+    Equalized Odds: zero
+    Calibration: zero
     Total Profit: max
     Accuracy: max
     Unexploited Profit: min
 
   metrics_for_evaluation:
-    - Demographic Parity_Worst
-    - Equal Opportunity_Worst
-    - Equalized Odds_Worst
-    - Calibration_Worst
+    - Demographic Parity
+    - Equal Opportunity
+    - Equalized Odds
+    - Calibration
     - Total Profit
     - Accuracy
     - Unexploited Profit
 
   ranking_weights:
-    Demographic Parity_Worst: 0.2
-    Equal Opportunity_Worst: 0
-    Equalized Odds_Worst: 0
-    Calibration_Worst: 0.2
+    Demographic Parity: 0.2
+    Equal Opportunity: 0
+    Equalized Odds: 0
+    Calibration: 0.2
     Total Profit: 0.2
     Accuracy: 0.4
     Unexploited Profit: 0.0
@@ -88,6 +88,10 @@ actions_outcomes:
     - Fully Repaid
     - Partially Repaid
     - Not Repaid
+  
+  positive_outcomes_set:
+    - Fully Repaid
+    - Partially Repaid
 
   mapping:
     Fully Repaid: Grant

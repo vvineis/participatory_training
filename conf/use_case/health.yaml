@@ -5,18 +5,18 @@ result_path: "C:/Users/Vittoria/Documents/GitHub/participatory_training/results/
 
 criteria:
   ranking_criteria:
-    Demographic Parity_Worst: zero
-    Equal Opportunity_Worst: zero
-    Equalized Odds_Worst: zero
-    Calibration_Worst: zero
+    Demographic Parity: zero
+    Equal Opportunity: zero
+    Equalized Odds: zero
+    Calibration: zero
     Total Cost: min
     Accuracy: max
 
   metrics_for_evaluation:
-    - Demographic Parity_Worst
-    - Equal Opportunity_Worst
-    - Equalized Odds_Worst
-    - Calibration_Worst
+    - Demographic Parity
+    - Equal Opportunity
+    - Equalized Odds
+    - Calibration
     - Total Cost
     - Accuracy
   
@@ -52,7 +52,7 @@ reward_calculator:
 
 models:
   outcome: 
-    model_type: regression
+    model_type: causal_regression
     model_class: CausalOutcomeModel
     learner:
       _target_: xgboost.XGBRegressor
@@ -88,6 +88,9 @@ actions_outcomes:
   outcomes_set: #binarized outcome set based on the threshold
    - 1
    - 0
+  
+  positive_outcomes_set:
+    - 1
 
 
   mapping:

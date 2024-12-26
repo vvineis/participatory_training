@@ -104,7 +104,7 @@ class CrossValidator:
         # Initialize best_score based on model type
         if self.cfg.models.outcome.model_type == 'classification':
             best_score = -float('inf')  # Higher accuracy is better
-        elif self.cfg.models.outcome.model_type == 'regression':
+        elif self.cfg.models.outcome.model_type == 'causal_regression':
             best_score = float('inf')  # Lower MAE is better
 
         for params in ParameterGrid(self.param_grid_outcome):
@@ -112,7 +112,7 @@ class CrossValidator:
             print(f'Applying tuning for {self.cfg.models.outcome.model_type} with model class {outcome_model_class }')
 
             # Dynamically initialize model
-            if treatment_train is not None:  # For health use case (regression)
+            if treatment_train is not None:  # For health use case (causal_regression)
                 learner = instantiate(self.cfg.models.outcome.learner)  
                 print(f'Learner: {learner} should be XGBRegressor')
                 outcome_model = outcome_model_class(learner=learner)
@@ -142,7 +142,7 @@ class CrossValidator:
 
             # Update best score and model based on model type
             if (self.cfg.models.outcome.model_type == 'classification' and score > best_score) or \
-            (self.cfg.models.outcome.model_type == 'regression' and score < best_score):
+            (self.cfg.models.outcome.model_type == 'causal_regression' and score < best_score):
                 best_score, best_params, best_model = score, params, outcome_model
         print(f'Finale best model: {best_model}')
 
