@@ -2,31 +2,21 @@ from utils.metrics.standard_metrics import StandardMetrics
 from utils.metrics.fairness_metrics import FairnessMetrics
 from utils.metrics.real_payoffs import RealPayoffMetrics
 from utils.rewards.get_rewards import RewardCalculator
-from hydra.utils import instantiate
 from utils.metrics.case_specific_metrics import HealthCaseMetrics, LendingCaseMetrics
-
-
-
-
-def load_case_metrics_module(cfg, suggestions_df, decision_col, true_outcome_col):
-    try:
-        # Instantiate CaseMetrics with the required arguments
-        case_metrics_module = instantiate(
-            cfg.case_specific_metrics.case_specific_metrics_module,
-            suggestions_df=suggestions_df,
-            decision_col=decision_col,
-            true_outcome_col=true_outcome_col,
-            cfg=cfg
-        )
-        return case_metrics_module
-    except Exception as e:
-        raise ImportError(f"Failed to instantiate case-specific metrics module: {e}") from e
-
 
 
 class MetricsCalculator:
     def __init__(self, cfg):
         self.cfg = cfg  # Store the config for direct access
+
+    def merge_predicted(self, suggestions_df, decision_col):
+        def select_pred(row):
+            if row[decision_col] == 'A':
+                return row['A_outcome_binary']
+            else:
+                return row['C_outcome_binary']
+        suggestions_df['Predicted_Binary'] = suggestions_df.apply(select_pred, axis=1)
+        return suggestions_df
 
     @staticmethod
     def _compute_max_min_fairness(*values):
@@ -45,7 +35,8 @@ class MetricsCalculator:
 
             if decision_col not in suggestions_df.columns:
                 continue
-
+            
+                
             # Fairness Metrics: Cache results for each decision column
             if decision_col not in fairness_cache:
                 if self.cfg.models.outcome.model_type == 'classification':
@@ -55,10 +46,12 @@ class MetricsCalculator:
 
                 else:
                     for action in self.cfg.actions_outcomes.actions_set:
-                        suggestions_df[f"{action}_predicted_outcome_binary"] = (
-                        suggestions_df[f"{action}_predicted_outcome"] <= self.cfg.case_specific_metrics.threshold_outcome
+                        suggestions_df[f"{action}_outcome_binary"] = (
+                        suggestions_df[f"{action}_outcome"] <= self.cfg.case_specific_metrics.threshold_outcome
                             ).astype(int)
-                    fairness_calculator = FairnessMetrics(cfg=self.cfg, suggestions_df=suggestions_df, decision_col=decision_col, outcome_col='True_Outcome_Binary')
+                    suggestions_df = self.merge_predicted(suggestions_df, decision_col)
+                    print(suggestions_df[[decision_col,'A_outcome_binary','C_outcome_binary', 'Predicted_Binary']])
+                    fairness_calculator = FairnessMetrics(cfg=self.cfg, suggestions_df=suggestions_df, decision_col=decision_col, outcome_col='Predicted_Binary')
                     actor_metrics_calculator = HealthCaseMetrics(suggestions_df, decision_col, true_outcome_col, self.cfg)
                 
                 fairness_cache[decision_col] = fairness_calculator.get_metrics(self.cfg.fairness.fairness_metrics)
@@ -101,9 +94,10 @@ class MetricsCalculator:
             print(f"Fairness metrics for actor: {actor}")
             print(f"Demographic Parity: {fairness_metrics.get('Demographic Parity')}")
             print(f"Equal Opportunity: {fairness_metrics.get('Equal Opportunity')}")
-            for metric_name, metric_values in fairness_metrics.items():
-                for key, value in metric_values.items():
-                    metrics[actor][f'{metric_name}_{key}'] = value
+            for k, v in fairness_metrics.items():
+                metrics[actor][k] = v
+            print(metrics[actor])
+
 
             '''# Retrieve all positive action parities dynamically
             positive_actions = self.cfg.actions_outcomes.positive_actions_set  # List of positive actions
