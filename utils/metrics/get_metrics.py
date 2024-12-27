@@ -54,9 +54,9 @@ class MetricsCalculator:
                     fairness_calculator = FairnessMetrics(cfg=self.cfg, suggestions_df=suggestions_df, decision_col=decision_col, outcome_col='Predicted_Binary')
                     actor_metrics_calculator = HealthCaseMetrics(suggestions_df, decision_col, true_outcome_col, self.cfg)
                 
-                fairness_cache[decision_col] = fairness_calculator.get_metrics(self.cfg.fairness.fairness_metrics)
-                print(f'case_metrics:{actor_metrics_calculator}')
-                print(f'fairness_metrics:{fairness_cache[decision_col]}')
+            fairness_cache[decision_col] = fairness_calculator.get_metrics(self.cfg.fairness.fairness_metrics)
+            print(f'case_metrics:{actor_metrics_calculator}')
+            print(f'fairness_metrics:{fairness_cache[decision_col]}')
 
 
             # Action Counts: Cache action percentages for efficiency
@@ -79,10 +79,17 @@ class MetricsCalculator:
             print(f'case_metrics:{metrics[actor]}')
 
             # Standard Metrics
-            standard_metrics_calculator = StandardMetrics(
-                suggestions_df, decision_col, true_outcome_col, 
-                self.cfg.actions_outcomes.actions_set, self.cfg.actions_outcomes.outcomes_set
-            )
+            if self.cfg.models.outcome.model_type == 'classification':
+                standard_metrics_calculator = StandardMetrics(
+                    suggestions_df, decision_col, true_outcome_col, 
+                    self.cfg.actions_outcomes.actions_set, self.cfg.actions_outcomes.outcomes_set, model_type='classification'
+                )
+            elif self.cfg.models.outcome.model_type == 'causal_regression':
+                standard_metrics_calculator = StandardMetrics(
+                    suggestions_df, decision_col, true_outcome_col,
+                    causal_reg_outcome_cols=[f'{action}_outcome' for action in self.cfg.actions_outcomes.actions_set],  model_type='causal_regression'
+                )
+
             standard_metrics = standard_metrics_calculator.get_metrics(self.cfg.standard_metrics)
 
             for metric in self.cfg.standard_metrics:
@@ -91,9 +98,8 @@ class MetricsCalculator:
             # Fairness Metrics: Retrieve from cache and dynamically update based on actions and outcomes
             fairness_metrics = fairness_cache[decision_col]
             # After computing fairness metrics
-            print(f"Fairness metrics for actor: {actor}")
-            print(f"Demographic Parity: {fairness_metrics.get('Demographic Parity')}")
-            print(f"Equal Opportunity: {fairness_metrics.get('Equal Opportunity')}")
+            print(f"Metrics for actor: {actor}")
+
             for k, v in fairness_metrics.items():
                 metrics[actor][k] = v
             print(metrics[actor])
@@ -134,17 +140,18 @@ class MetricsCalculator:
                 f'Percent_{action}': action_counts.get(action, 0) for action in self.cfg.actions_outcomes.actions_set
             })
 
-            for reward_actor in self.cfg.actors.reward_types:
-                reward_structures = RewardCalculator.REWARD_STRUCTURES
+            '''for reward_actor in self.cfg.actors.reward_types:
+                if cfg.models.outcome.model_type == 'classification':
+                    reward_structures = RewardCalculator.REWARD_STRUCTURES
 
-                payoff_metrics_calculator = RealPayoffMetrics(
-                    cfg=self.cfg, suggestions_df=suggestions_df, decision_col=decision_col,
-                    true_outcome_col=true_outcome_col,
-                    reward_actor=reward_actor, reward_structures=reward_structures
-                    )
-                total_real_payoff = payoff_metrics_calculator.compute_total_real_payoff()
-                
+                    payoff_metrics_calculator = RealPayoffMetrics(
+                        cfg=self.cfg, suggestions_df=suggestions_df, decision_col=decision_col,
+                        true_outcome_col=true_outcome_col,
+                        reward_actor=reward_actor, reward_structures=reward_structures
+                        )
+                    total_real_payoff = payoff_metrics_calculator.compute_total_real_payoff()
+                    
                 # Store the payoff under reward_actor's metrics but using the context of `actor`
-                metrics[actor][f'Total Real Payoff ({reward_actor})'] = total_real_payoff
+                metrics[actor][f'Total Real Payoff ({reward_actor})'] = total_real_payoff'''
 
         return metrics
