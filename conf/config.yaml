@@ -18,6 +18,7 @@ context: ${use_case.context}
 case_specific_metrics: ${use_case.case_specific_metrics}
 ranking_weights: ${use_case.criteria.ranking_weights}
 reward_calculator: ${use_case.reward_calculator}
+standard_metrics: ${use_case.standard_metrics}
 
 categorical_columns: 
   - Action
@@ -45,8 +46,4 @@ fairness:
 
 
 
-standard_metrics: 
-  - Precision 
-  - Recall 
-  - F1 Score 
-  - Accuracy
+

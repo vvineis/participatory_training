@@ -43,6 +43,12 @@ case_specific_metrics:
   positive_attribute_for_fairness: 'Applicant Type'
   positive_group_value: 1
 
+standard_metrics: 
+  - Precision 
+  - Recall 
+  - F1 Score 
+  - Accuracy
+
 reward_calculator:
   _target_: utils.rewards.get_rewards.RewardCalculator
   reward_types: ${actors.reward_types}

@@ -136,7 +136,7 @@ class RewardCalculator:
 
 
 class HealthRewardCalculator:
-    def __init__(self, base_cost, recovery_factor, max_cost, alpha=0.5, noise_level=0.05, reward_types=None):
+    def __init__(self, base_cost, recovery_factor, max_cost, alpha=0.7, noise_level=0.05, reward_types=None):
         """
         Initialize the reward calculator.
         :param base_cost: Base cost per treatment (dict).
@@ -155,7 +155,7 @@ class HealthRewardCalculator:
 
     def compute_cost(self, treatment, recovery_time):
         """ Compute the total cost based on treatment and recovery time. """
-        return self.base_cost[treatment] + recovery_time * self.recovery_factor
+        return self.base_cost[treatment] + recovery_time *200
     
     def get_rewards(self, action, outcome, *args):
         """

@@ -23,10 +23,10 @@ criteria:
 
 
   ranking_weights:
-    Demographic Parity_Worst: 0.2
-    Equal Opportunity_Worst: 0
-    Equalized Odds_Worst: 0
-    Calibration_Worst: 0.2
+    Demographic Parity: 0.2
+    Equal Opportunity: 0
+    Equalized Odds: 0
+    Calibration: 0.2
     Total Cost: 0.2
     Accuracy: 0.4
 
@@ -42,13 +42,19 @@ case_specific_metrics:
   positive_group_value: 1
   threshold_outcome: 6
 
+standard_metrics: 
+  - Accuracy
+  - Proportion Correct A Decisions
+  - Proportion Correct C Decisions
+
+
 reward_calculator:
   _target_: utils.rewards.get_rewards.HealthRewardCalculator
   reward_types: ${actors.reward_types}
-  base_cost: {'A': 6000, 'C': 2000}
+  base_cost: {'A': 10, 'C': 4000}
   recovery_factor: 400
-  max_cost: 12000
-  alpha: 0.6
+  max_cost: 8400 
+  alpha: 0.7
 
 models:
   outcome: 
