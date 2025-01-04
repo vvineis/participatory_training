@@ -1,6 +1,6 @@
 name: health
 
-data_path: "C:/Users/Vittoria/Documents/GitHub/participatory_training/data/health/simulated_health_data.csv"
+data_path: "C:/Users/Vittoria/Documents/GitHub/participatory_training/data/health/ihdp_npci_1.csv"
 result_path: "C:/Users/Vittoria/Documents/GitHub/participatory_training/results/health/"
 
 criteria:
@@ -33,14 +33,14 @@ criteria:
 case_specific_metrics: 
   metrics: 
     - 'Total Cost'
-    - 'Avg_no_recovery_weeks'
+    - 'Avg_outcome_score'
 
   case_specific_metrics_module: 
     _target_: utils.metrics.case_specific_metrics.HealthCaseMetrics
   
-  positive_attribute_for_fairness: 'Region_Urban'
+  positive_attribute_for_fairness: x7
   positive_group_value: 1
-  threshold_outcome: 6
+  threshold_outcome: np.median(data['y_factual'])
 
 standard_metrics: 
   - Accuracy
@@ -51,8 +51,7 @@ standard_metrics:
 reward_calculator:
   _target_: utils.rewards.get_rewards.HealthRewardCalculator
   reward_types: ${actors.reward_types}
-  base_cost: {'A': 10, 'C': 4000}
-  recovery_factor: 400
+  base_cost: {'1': 1, '0': 0}
   max_cost: 8400 
   alpha: 0.7
 
@@ -85,11 +84,11 @@ models:
 
 actions_outcomes:
   actions_set: 
-    - A
-    - C
+    - 1
+    - 0
 
   positive_actions_set:
-    - A
+    - 1
 
   outcomes_set: #binarized outcome set based on the threshold
    - 1
@@ -98,23 +97,17 @@ actions_outcomes:
   positive_outcomes_set:
     - 1
 
-
-  mapping:
-    Fully Repaid: Grant
-    Not Repaid: Not Grant
-    default: Grant lower
-
 actors: 
   actor_list: 
-    - Patient
-    - Hospital_Admin
-    - NHA
+    - Max_outcome
+    - Min_cost
+    - Balance
     - Outcome_Pred_Model
 
   reward_types: 
-    - Patient
-    - Hospital_Admin
-    - NHA
+    - Max_outcome
+    - Min_cost
+    - Balance
 
 augmentation_for_rewards:
   augmentation_parameters:
@@ -123,21 +116,35 @@ augmentation_for_rewards:
 
 context:
   feature_columns:
-    - Gender_M
-    - Region_Urban
-    - SmokingStatus_Smoker
-    - PhysicalActivity_Moderate
-    - PhysicalActivity_Sedentary
-    - Age
+    - x1
+    - x2
+    - x3
+    - x4
+    - x5
+    - x6
+    - x7
+    - x8
+    - x9
+    - x10
+    - x11
+    - x12
+    - x13
+    - x14
+    - x15
+    - x16
+    - x17
+    - x18
+    - x19
+    - x20
+    - x21
+    - x22
+    - x23
+    - x24
+    - x25
+
 
   columns_to_display:
-    - Gender_M
-    - Region_Urban
-    - SmokingStatus_Smoker
-    - PhysicalActivity_Moderate
-    - PhysicalActivity_Sedentary
-    - Age
-    - Cost
+    - x7
 
 
 
