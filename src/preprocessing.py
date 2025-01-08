@@ -23,7 +23,7 @@ class DataProcessor:
         self._split_data()
         self.reward_calculator = instantiate(cfg.reward_calculator) 
         self.augmentation_params = cfg.augmentation_for_rewards.get("augmentation_parameters", {})
-        
+
 
     def _split_data(self):
         # Split data into training and testing sets
@@ -52,8 +52,8 @@ class DataProcessor:
         val_or_test_df = self.scale_features(val_df, fit=False)
 
         # Prepare outcome prediction data
-        X_train_outcome, treatment_train, y_train_outcome = self.prepare_for_outcome_prediction(train_df)
-        X_val_or_test_outcome, treatment_val_or_test, y_val_or_test_outcome = self.prepare_for_outcome_prediction(val_or_test_df)
+        X_train_outcome, treatment_train, _, y_train_outcome = self.prepare_for_outcome_prediction(train_df)
+        X_val_or_test_outcome, treatment_val_or_test, mu_val_or_test, y_val_or_test_outcome = self.prepare_for_outcome_prediction(val_or_test_df)
         # Prepare reward prediction data
         augmented_train_df = self.augment_train_for_reward(train_df)
 
@@ -78,7 +78,7 @@ class DataProcessor:
         # Dictionary to store training and validation data for each reward type
         dict_for_training = {
             'train_outcome': (X_train_outcome, treatment_train, y_train_outcome),
-            'val_or_test_outcome': (X_val_or_test_outcome,treatment_val_or_test, y_val_or_test_outcome),
+            'val_or_test_outcome': (X_val_or_test_outcome,treatment_val_or_test, mu_val_or_test, y_val_or_test_outcome),
             'train_reward': (X_train_reward_combined, y_train_rewards), #*y_train_rewards.values()),
             'val_or_test_reward': (X_val_or_test_reward_combined, y_val_or_test_rewards), #*y_val_or_test_rewards.values()),
             'val_or_test_set': val_or_test_df,
@@ -90,6 +90,33 @@ class DataProcessor:
         return dict_for_training
 
     def scale_features(self, df, fit=True):
+        """
+        Scale numeric features, excluding those restricted to the range [0, 1].
+        :param df: DataFrame to scale.
+        :param fit: Whether to fit the scaler (True for training data).
+        :return: Scaled DataFrame.
+        """
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=FutureWarning)
+
+            # Select numeric columns
+            numeric_columns = df[self.feature_columns].select_dtypes(include=['int', 'float']).columns
+
+            # Exclude columns with values restricted to [0, 1]
+            non_binary_columns = [
+                col for col in numeric_columns
+                if not ((df[col].min() >= 0) and (df[col].max() <= 1))
+            ]
+
+            # Apply scaling only to non-binary columns
+            if fit:
+                df.loc[:, non_binary_columns] = self.scaler.fit_transform(df[non_binary_columns])
+            else:
+                df.loc[:, non_binary_columns] = self.scaler.transform(df[non_binary_columns])
+
+        return df
+    
+    '''def scale_features(self, df, fit=True):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=FutureWarning)
 
@@ -98,11 +125,17 @@ class DataProcessor:
                 df.loc[:,  numeric_columns] = self.scaler.fit_transform(df[numeric_columns])
             else:
                 df.loc[:,  numeric_columns] = self.scaler.transform(df[numeric_columns])
-        return df
+        return df'''
 
     def one_hot_encode(self, train_df, val_df):
         # Fit OneHotEncoder on the training data
-        self.onehot_encoder.fit(train_df[self.categorical_columns])
+        train_df['Outcome'] = train_df['Outcome'].astype(str)
+        val_df['Outcome'] = val_df['Outcome'].astype(str)
+        print("Unique values in 'Action':", train_df['Action'].unique(), train_df['Action'].dtypes)
+        print("Unique values in 'Outcome':", train_df['Outcome'].unique(), train_df['Outcome'].dtypes)
+        #check type of columns: 
+        print(train_df.dtypes)
+        self.onehot_encoder.fit(train_df[['Action', 'Outcome']])
 
         # Transform the train and validation sets
         X_train_encoded = self.onehot_encoder.transform(train_df[self.categorical_columns])
@@ -126,7 +159,7 @@ class DataProcessor:
         augmented_rows = []
 
         # Retrieve all possible actions from the configuration
-        possible_actions = self.augmentation_params.get("actions_set", ["A", "C"])  # Default actions if not provided
+        possible_actions = self.augmentation_params.get("actions_set", [0,1])  # Default actions if not provided
 
         for _, row in df.iterrows():
             # Include the original row
@@ -171,10 +204,12 @@ class DataProcessor:
 
         # Conditionally handle the 'Action' column for health use case
         treatment = None
+        mu=None
         if self.cfg.use_case.name == 'health' and 'Action' in df.columns:
             treatment = df['Action']
+            mu=df['Outcome_True']
         
-        return X, treatment, y
+        return X, treatment, mu,y
 
     def prepare_for_reward_prediction(self, df):
         reward_features = self.feature_columns + self.categorical_columns #['Income', 'Credit Score', 'Loan Amount', 'Interest Rate', 'Action', 'Outcome']

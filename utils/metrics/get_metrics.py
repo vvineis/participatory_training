@@ -64,7 +64,20 @@ class MetricsCalculator:
                 action_counts_cache[decision_col] = suggestions_df[decision_col].value_counts(normalize=True).to_dict()
 
             # Instantiate the class
+            # Instantiate the class
             print(self.cfg.case_specific_metrics.metrics)
+
+            # Iterate through the metrics specified in the configuration
+            for metric in self.cfg.case_specific_metrics.metrics:
+                # Check if the metric is available and compute it dynamically
+                try:
+                    metrics[actor][metric] = actor_metrics_calculator.get_metrics([metric])[metric]
+                except ValueError as e:
+                    print(f"Error computing metric '{metric}': {e}")
+
+            # Print the computed metrics for the actor
+            print(f'case_metrics: {metrics[actor]}')
+            '''print(self.cfg.case_specific_metrics.metrics)
             for metric in self.cfg.case_specific_metrics.metrics:
                 if metric == 'Total Profit':
                     metrics[actor][metric] = actor_metrics_calculator.compute_total_profit()
@@ -72,11 +85,11 @@ class MetricsCalculator:
                     metrics[actor][metric] = actor_metrics_calculator.compute_unexploited_profit()
                 elif metric == 'Total Loss':
                     metrics[actor][metric] = actor_metrics_calculator.compute_total_loss()
-                elif metric == 'Total Cost':
+                elif metric == 'Tota':
                     metrics[actor][metric] = actor_metrics_calculator.compute_total_cost()
                 elif metric=='Avg_no_recovery_weeks':
                     metrics[actor][metric] = actor_metrics_calculator.compute_avg_no_recovery_weeks()
-            print(f'case_metrics:{metrics[actor]}')
+            print(f'case_metrics:{metrics[actor]}')'''
 
             # Standard Metrics
             if self.cfg.models.outcome.model_type == 'classification':

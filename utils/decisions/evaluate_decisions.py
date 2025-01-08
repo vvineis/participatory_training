@@ -18,7 +18,8 @@ class SummaryProcessor:
         self.strategy=strategy
         self.model_type = cfg.models.outcome.model_type 
         self.seed = seed
-        self.mapping=cfg.actions_outcomes.mapping
+        if self.model_type == 'classification':
+            self.mapping=cfg.actions_outcomes.mapping
         if self.seed is not None:
             random.seed(self.seed)
 
@@ -72,10 +73,10 @@ class SummaryProcessor:
                 
             elif self.model_type == 'causal_regression':
                 # Compute suggested actions for each row
-                # Extract the recovery times for actions
-                recovery_times = {action: value[0] for action, value in predicted_outcomes.items()}
+                # Extract the expected outcomes for each action
+                exp_outcome = {action: value[0] for action, value in predicted_outcomes.items()}
                 # Determine the best action for Outcome_Pred_Model (e.g., minimize recovery time)
-                best_action = self._get_best_action_given_outcome(recovery_times, obj='min')
+                best_action = self._get_best_action_given_outcome(exp_outcome, obj='max')
                 #print(f'best_action {best_action}')
                 # Append the single best action for this row
                 suggested_actions['Outcome_Pred_Model'].append(best_action)

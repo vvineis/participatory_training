@@ -69,56 +69,76 @@ class HealthCaseMetrics:
         self.true_outcome_col = true_outcome_col
         self.cfg = cfg
 
-    def compute_total_cost(self):
+    def compute_number_treated(self):
         # Ensure the decision column is valid
+        print(self.suggestions_df.columns)
         if self.decision_col not in self.suggestions_df.columns:
             raise ValueError(f"Decision column {self.decision_col} not found in the DataFrame")
         
-        # Compute total cost
-        total_cost = 0
-        for decision, group in self.suggestions_df.groupby(self.decision_col):
-            # Get the base cost for the current decision
-            base_cost = self.cfg.reward_calculator.base_cost.get(decision, 0)  # Default to 0 if not found
-            
-            # Sum up the cost for all rows with this decision
-            total_cost += base_cost * len(group)
         
-        return total_cost
+        # Compute total cost
+        total_treated  = 0
+        for decision, group in self.suggestions_df.groupby(self.decision_col):
+            if decision == 'A':  # Adjust this condition based on your definition of treated
+                total_treated += len(group)
+        
+        return total_treated
     
-    def compute_avg_no_recovery_weeks(self):
-        # Compute the average no recovery weeks based on the decision
-        if 'A_outcome' not in self.suggestions_df.columns or 'C_outcome' not in self.suggestions_df.columns:
-            raise ValueError("Columns 'A_outcome' or 'C_outcome' not found in the DataFrame")
+    def compute_mean_outcome(self):
+        """
+        Compute the total outcome separately for treated and control groups.
+        :return: A tuple containing total outcome for treated and control groups.
+        """
 
-        # Select the appropriate outcome column based on the decision
-        self.suggestions_df['Selected_Outcome'] = self.suggestions_df.apply(
-            lambda row: row['A_outcome'] if row[self.decision_col] == 'A' else row['C_outcome'], axis=1
-        )
+        # Initialize totals
+        total_outcome_treated = 0.0
+        total_outcome_control = 0.0
 
-        # Compute the average no recovery weeks
-        avg_no_recovery_weeks = self.suggestions_df['Selected_Outcome'].mean()
+        # Iterate through groups based on the decision column
+        for decision, group in self.suggestions_df.groupby(self.decision_col):
+            if decision == 'A':  # Treated group
+                total_outcome_treated += group['A_outcome'].mean()
+            elif decision == 'C':  # Control group
+                total_outcome_control += group['C_outcome'].mean()
 
-        return avg_no_recovery_weeks
-
+        return total_outcome_treated, total_outcome_control
+    
     def compute_all_metrics(self):
+        """
+        Compute and return all relevant metrics.
+        :return: A dictionary containing all computed metrics.
+        """
+        total_treated = self.compute_number_treated()
+        mean_outcome_treated, mean_outcome_control = self.compute_mean_outcome()
+
         return {
-            'Total Cost': self.compute_total_cost(),
-            'Avg_no_recovery_weeks': self.compute_avg_no_recovery_weeks(),
+            'Total_treated': total_treated,
+            'Mean_outcome_treated': mean_outcome_treated,
+            'Mean_outcome_control': mean_outcome_control,
         }
     
     def get_metrics(self, case_metrics_list):
+        """
+        Retrieve selected metrics from the available metrics.
+        :param case_metrics_list: List of metric names to compute and return.
+        :return: Dictionary containing the selected metrics and their values.
+        """
+        # Define available metrics
         available_metrics = {
-            'Total Cost': self.compute_total_cost,
-            'Avg_no_recovery_weeks': self.compute_avg_no_recovery_weeks,
+            'Total_treated': self.compute_number_treated,
+            'Mean_outcome_treated': lambda: self.compute_mean_outcome()[0],  # Treated mean outcome
+            'Mean_outcome_control': lambda: self.compute_mean_outcome()[1],  # Control mean outcome
         }
 
+        # Compute selected metrics
         selected_metrics = {}
         for metric in case_metrics_list:
             if metric in available_metrics:
                 selected_metrics[metric] = available_metrics[metric]()
             else:
                 raise ValueError(f"Metric '{metric}' is not available. Choose from {list(available_metrics.keys())}.")
-        
+
         return selected_metrics
+
     
 

@@ -6,54 +6,47 @@ result_path: "C:/Users/Vittoria/Documents/GitHub/participatory_training/results/
 criteria:
   ranking_criteria:
     Demographic Parity: zero
-    Equal Opportunity: zero
-    Equalized Odds: zero
-    Calibration: zero
-    Total Cost: min
+    #Equal Opportunity: zero
+    #Equalized Odds: zero
+    #Calibration: zero
+    Mean_outcome_treated: max
+    Mean_outcome_control: max
     Accuracy: max
 
   metrics_for_evaluation:
     - Demographic Parity
-    - Equal Opportunity
-    - Equalized Odds
-    - Calibration
-    - Total Cost
+    - Mean_outcome_treated
+    - Mean_outcome_control
     - Accuracy
   
-
-
   ranking_weights:
     Demographic Parity: 0.2
-    Equal Opportunity: 0
-    Equalized Odds: 0
-    Calibration: 0.2
-    Total Cost: 0.2
+    Mean_outcome_treated: 0.2
+    Mean_outcome_control: 0.2
     Accuracy: 0.4
 
 case_specific_metrics: 
   metrics: 
-    - 'Total Cost'
-    - 'Avg_outcome_score'
+    - 'Total_treated'
+    - 'Mean_outcome_treated'
+    - 'Mean_outcome_control'
 
   case_specific_metrics_module: 
     _target_: utils.metrics.case_specific_metrics.HealthCaseMetrics
   
-  positive_attribute_for_fairness: x7
+  positive_attribute_for_fairness: x23
   positive_group_value: 1
-  threshold_outcome: np.median(data['y_factual'])
+  threshold_outcome: 2.223557401709045 #median value across all values
 
 standard_metrics: 
   - Accuracy
-  - Proportion Correct A Decisions
-  - Proportion Correct C Decisions
 
 
 reward_calculator:
   _target_: utils.rewards.get_rewards.HealthRewardCalculator
   reward_types: ${actors.reward_types}
-  base_cost: {'1': 1, '0': 0}
-  max_cost: 8400 
-  alpha: 0.7
+  base_cost: {'A': 1, 'C': 0}
+
 
 models:
   outcome: 
@@ -61,10 +54,12 @@ models:
     model_class: CausalOutcomeModel
     learner:
       _target_: xgboost.XGBRegressor
+      random_state: 111
     param_grid:
-        max_depth: [3, 5]
-        n_estimators: [100, 200]
+      max_depth: [5]
+      n_estimators: [20, 50]
         
+
   rewards:
     regressor:
       _target_: sklearn.ensemble.RandomForestRegressor
@@ -84,11 +79,11 @@ models:
 
 actions_outcomes:
   actions_set: 
-    - 1
-    - 0
+    - A
+    - C
 
   positive_actions_set:
-    - 1
+    - A
 
   outcomes_set: #binarized outcome set based on the threshold
    - 1
@@ -99,20 +94,20 @@ actions_outcomes:
 
 actors: 
   actor_list: 
-    - Max_outcome
-    - Min_cost
-    - Balance
+    - Parent
+    - Healthcare_Provider
+    - Policy_maker
     - Outcome_Pred_Model
 
   reward_types: 
-    - Max_outcome
-    - Min_cost
-    - Balance
+    - Parent
+    - Healthcare_Provider
+    - Policy_Maker
 
 augmentation_for_rewards:
   augmentation_parameters:
       actions_set: ${actions_outcomes.actions_set}
-      additional_arguments: []
+      additional_arguments: ['x23']
 
 context:
   feature_columns:
@@ -143,8 +138,9 @@ context:
     - x25
 
 
+
   columns_to_display:
-    - x7
+    - x23
 
 
 

@@ -95,7 +95,7 @@ class CrossValidator:
         module = import_module("utils.models.outcome_model")  
         return getattr(module, class_name)
 
-    def tune_outcome_model(self, X_train, treatment_train, y_train, X_val, treatment_val, y_val):
+    def tune_outcome_model(self, X_train, treatment_train, mu, y_train, X_val, treatment_val, y_val):
         """
         Tune the outcome model dynamically (with or without treatment).
         """
@@ -114,12 +114,10 @@ class CrossValidator:
             # Dynamically initialize model
             if treatment_train is not None:  # For health use case (causal_regression)
                 learner = instantiate(self.cfg.models.outcome.learner)  
-                print(f'Learner: {learner} should be XGBRegressor')
                 outcome_model = outcome_model_class(learner=learner)
                 print(f'outcome_model: {outcome_model}')
             else:  # For lending use case (classification)
                 classifier = instantiate(self.cfg.models.outcome.classifier)  # Resolve classifier
-                print(f'Classifier: {classifier} should be RandomForest')
                 outcome_model = outcome_model_class(classifier=classifier)
                 print(f'outcome_model: {outcome_model}')
 
@@ -134,7 +132,7 @@ class CrossValidator:
 
             # Evaluate and update best model
             if treatment_val is not None:
-                score = outcome_model.evaluate(X_val, treatment_val, y_val)
+                score = outcome_model.evaluate(X_val, treatment_val, mu) #mu0_val, mu1_val)
             else:
                 score = outcome_model.evaluate(X_val, y_val)
             
@@ -211,8 +209,8 @@ class CrossValidator:
             print(f"Processing fold {fold + 1}/{self.n_splits}")
             
             # Unpack train and validation sets for the fold
-            X_train_outcome, treatment_train, y_train_outcome = fold_dict['train_outcome']
-            X_val_outcome, treatment_val, y_val_outcome = fold_dict['val_or_test_outcome']
+            X_train_outcome, treatment_train,y_train_outcome = fold_dict['train_outcome']
+            X_val_outcome, treatment_val, mu, y_val_outcome = fold_dict['val_or_test_outcome']
 
             X_train_reward, y_train_rewards = fold_dict['train_reward']
             X_val_reward, y_val_rewards = fold_dict['val_or_test_reward']
@@ -220,7 +218,7 @@ class CrossValidator:
 
             # Tune outcome model
             best_params_outcome, best_model_outcome, best_score_outcome = self.tune_outcome_model(
-                X_train_outcome, treatment_train, y_train_outcome, 
+                X_train_outcome, treatment_train, mu, y_train_outcome, 
                 X_val_outcome,treatment_val, y_val_outcome
             )
 

@@ -2,8 +2,14 @@ from imblearn.over_sampling import SMOTE
 from sklearn.metrics import accuracy_score
 import pandas as pd
 from causalml.inference.meta import BaseXRegressor
+import matplotlib.pyplot as plt
 from xgboost import XGBRegressor
 import numpy as np
+from sklearn.linear_model import Ridge
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestRegressor
+import warnings
+from sklearn.exceptions import ConvergenceWarning
 
 class OutcomeModel:
     def __init__(self, classifier, use_smote=True, smote_k_neighbors=1, smote_random_state=42,  model_random_state=111):
@@ -40,7 +46,6 @@ class OutcomeModel:
         
         return accuracy
 
-
 class CausalOutcomeModel:
     def __init__(self, learner=None, control_name='C', random_state=111):
         if learner is None:
@@ -53,10 +58,16 @@ class CausalOutcomeModel:
         self.random_state = random_state
         self.model = None
 
-    def train(self, X_train, treatment_train, y_train, **hyperparams):    
+    def train(self, X_train, treatment_train, y_train, **hyperparams): 
+        warnings.filterwarnings("ignore", category=ConvergenceWarning)   
         # Create a fresh learner and model
         # Dynamically initialize the learner instance
         self.learner_instance = self.learner_class(random_state=self.random_state, **hyperparams)
+        if isinstance(self.learner_instance, XGBRegressor):
+            print("Using XGBRegressor as the learner.")
+        else:
+            print(f"Warning: The learner is not XGBRegressor. It is {type(self.learner_instance)}.")
+        
         self.model = BaseXRegressor(learner=self.learner_instance, control_name=self.control_name)
         #print(f'X_train {X_train.head()}')
         #print(f'treatment_train, {treatment_train.head()}')
@@ -76,12 +87,12 @@ class CausalOutcomeModel:
             # Predict baseline outcome for control group 'C'
             patient = X_test.iloc[i:i + 1]
             predicted_outcome_C = self.model.models_mu_c['A'].predict(patient)
-            predicted_outcome_C = np.round(predicted_outcome_C, 0)
+            predicted_outcome_C = np.round(predicted_outcome_C, 1)
             predicted_outcomes_C.append(predicted_outcome_C)
 
             # Predict treatment effect (CATE) and calculate absolute outcome for 'A'
             cate = self.model.predict(patient, treatment='A')
-            predicted_outcome_A = np.round(predicted_outcome_C + cate, 0)
+            predicted_outcome_A = np.round(predicted_outcome_C + cate, 1)
             predicted_outcomes_A.append(predicted_outcome_A)
 
         #print(f'predicted_outcomes_C:{predicted_outcomes_C[0]}', f'predicted_outcomes_A:{predicted_outcomes_A[0]}')
@@ -109,6 +120,10 @@ class CausalOutcomeModel:
             print(f"Mean Absolute Error (Treated): {mae_treated:.4f}")
         else:
             print("Warning: No treated samples ('A') found in the test data.")
+        #print sample of predicted and true outcomes: 
+        # Print sample of predicted and true outcomes for the first 10 treated instances
+        #print(f"Predicted outcomes: {predicted_outcomes_A[treated_indices]}, Actual outcomes: {actual_outcomes[treated_indices]}")
+
 
         # Calculate MAE for control group
         if np.any(control_indices):
@@ -124,4 +139,6 @@ class CausalOutcomeModel:
         print(f"Average Mean Absolute Error: {avg_mae:.4f}" if avg_mae is not None else "No valid samples for MAE computation.")
         print(f'mae_treated: {mae_treated}, mae_control: {mae_control}')
         return avg_mae
+
+
 

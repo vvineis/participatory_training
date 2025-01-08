@@ -90,7 +90,7 @@ class DecisionProcessor:
                     # Add predicted outcomes as a feature for the reward model
                     feature_context_with_action = feature_context.copy()
                     feature_context_with_action['Action'] = action
-                    feature_context_with_action['Outcome'] = predicted_outcomes.flatten()
+                    feature_context_with_action['Outcome'] = predicted_outcomes.flatten().astype(str)
 
                     # Encode features (including Outcome) for reward model
                     context_encoded_df = self.encode_features(feature_context_with_action)

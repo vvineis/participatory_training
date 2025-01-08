@@ -42,6 +42,7 @@ class KalaiSmorodinsky(SolutionStrategy):
 # Nash Bargaining Solution Strategy
 class NashBargainingSolution(SolutionStrategy):
     def compute(self, expected_rewards, disagreement_point, ideal_point, all_actions):
+        #print(expected_rewards, disagreement_point, idealS_point, all_actions)
         # Full Agreement: Check for actions that meet the disagreement point for all actors
         full_agreement_products = {
             action: prod(

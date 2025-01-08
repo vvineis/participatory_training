@@ -133,9 +133,157 @@ class RewardCalculator:
         # Split rewards tuple into separate columns and assign them
         df[['Bank_reward', 'Applicant_reward', 'Regulatory_reward']] = pd.DataFrame(rewards.tolist(), index=df.index)
         return df
-
-
+    
 class HealthRewardCalculator:
+    def __init__(self, alpha=0.7, beta=0.5, gamma=0.6, noise_level=0.05, fixed_cost=100, base_cost=None, reward_types=None):
+        """
+        Initialize the reward calculator.
+        """
+        self.alpha = alpha
+        self.beta = beta
+        self.gamma = gamma
+        self.noise_level = noise_level
+        self.fixed_cost = fixed_cost
+        self.base_cost = base_cost if base_cost else {'A': 1, 'C': 0}
+        self.reward_types = reward_types if reward_types else ["Healthcare_Provider", "Policy_Maker", "Parent"]
+        self.min_outcome = None
+        self.max_outcome = None
+        self.min_outcome_action = {}
+        self.max_outcome_action = {}
+
+    def compute_rewards(self, df):
+        """
+        Compute rewards for all stakeholders and add them to the DataFrame.
+        """
+        # Check for required columns
+        required_cols = ['Action', 'Outcome', 'x23']
+        if not all(col in df.columns for col in required_cols):
+            raise ValueError(f"Input DataFrame must contain the following columns: {required_cols}")
+
+        # Convert Outcome to float
+        df['Outcome'] = df['Outcome'].astype(float)
+
+        # Compute min and max outcomes by Action
+        self.min_outcome_action = df.groupby('Action')['Outcome'].min().to_dict()
+        self.max_outcome_action = df.groupby('Action')['Outcome'].max().to_dict()
+
+        # Dynamically compute rewards based on reward_types
+        for reward_type in self.reward_types:
+            if reward_type == "Healthcare_Provider":
+                df[f"{reward_type}_reward"] = df.apply(
+                    lambda row: self._healthcare_provider_reward(row['Outcome'], row['Action']), axis=1
+                )
+            elif reward_type == "Policy_Maker":
+                df[f"{reward_type}_reward"] = df.apply(
+                    lambda row: self._policy_maker_reward(row['Outcome'], row['x23'], row['Action']), axis=1
+                )
+            elif reward_type == "Parent":
+                df[f"{reward_type}_reward"] = df['Outcome'].apply(self._parent_reward)
+            else:
+                raise ValueError(f"Unknown reward type: {reward_type}")
+
+        return df
+
+    
+    def get_rewards(self, action, outcome, x23):
+        """
+        Dynamically compute rewards for a given action, outcome, and group.
+        :param action: Treatment action (e.g., 0 or 1).
+        :param outcome: Observed outcome for the individual.
+        :param x23: Demographic group identifier for the individual.
+        :return: List of rewards for the specified reward_types.
+        """
+        # Use fixed cost since cost is constant in this context
+        cost = self.fixed_cost
+
+        # Calculate rewards for each reward type
+        rewards = {}
+        for reward_type in self.reward_types:
+            if reward_type == "Parent":
+                rewards[reward_type] = self._parent_reward(outcome)
+            elif reward_type == "Policy_Maker":
+                rewards[reward_type] = self._policy_maker_reward(outcome, x23,action)
+            elif reward_type == "Healthcare_Provider":
+                rewards[reward_type] = self._healthcare_provider_reward(outcome, action)
+            else:
+                raise ValueError(f"Unknown reward type: {reward_type}")
+
+        # Return rewards in the order of reward_types
+        return [rewards[reward_type] for reward_type in self.reward_types]
+
+    def _healthcare_provider_reward(self, outcome, action):
+        """
+        Reward for Healthcare Providers based on cost-effectiveness.
+        """
+        # Get min and max outcomes for the specific treatment
+        min_outcome = self.min_outcome_action.get(action, 0)
+        max_outcome = self.max_outcome_action.get(action, 1)
+        
+        # Normalize outcome for the action
+        normalized_outcome = (outcome - min_outcome) / (max_outcome - min_outcome + 1e-10)
+
+        # Incorporate cost-effectiveness
+        cost_penalty = self.base_cost.get(action, 0)
+        reward = normalized_outcome * (1 - cost_penalty)
+        reward += np.random.uniform(-self.noise_level, self.noise_level)
+        return np.clip(reward, 0, 1)
+
+    def _policy_maker_reward(self, outcome, x23, action):
+        """
+        Reward for Policy-Makers, emphasizing outcome improvements over the minimum.
+        """
+        # Get min outcome for the specific treatment and category
+        min_outcome = self.min_outcome_action.get(action, 0)
+
+        # Normalize improvement above the minimum
+        improvement = max(0, outcome - min_outcome)
+        max_improvement = self.max_outcome_action.get(action, 1) - min_outcome
+        normalized_improvement = improvement / (max_improvement + 1e-10)
+
+        # Apply additional weight for fairness considerations
+        demographic_weight = 1.0 + self.beta * (x23 - 0.5)  # Example weight adjustment for x23
+        reward = normalized_improvement * demographic_weight
+        reward += np.random.uniform(-self.noise_level, self.noise_level)
+        return np.clip(reward, 0, 1)
+
+    def _parent_reward(self, outcome):
+        """
+        Parent's reward as directly proportional to the normalized outcome.
+        """
+        max_outcome = max(self.max_outcome_action.values(), default=12)
+        min_outcome = min(self.min_outcome_action.values(), default=0)
+        reward = (outcome - min_outcome) / (max_outcome - min_outcome + 1e-10)
+        return np.clip(reward, 0, 1)
+
+    '''def _parent_reward(self, row, mean_outcome_action):
+            """
+            Updated reward for Parents with relative benefit and premium component.
+            :param row: Row of the DataFrame for the individual.
+            :param mean_outcome_action: Mean outcomes for each treatment group.
+            :return: Normalized reward.
+            """
+            # Get min and max mean outcomes across groups
+            min_mean_outcome = mean_outcome_action.min()
+            max_mean_outcome = mean_outcome_action.max()
+
+            # Compute the normalized relative benefit
+            relative_benefit = (row['Outcome'] - min_mean_outcome) / (max_mean_outcome - min_mean_outcome + 1e-10)
+
+            # Compute the premium component
+            if row['Outcome'] > min_mean_outcome:
+                premium = (row['Outcome'] - min_mean_outcome) / (max_mean_outcome - min_mean_outcome + 1e-10)
+            else:
+                premium = 0
+
+            # Combine the relative benefit and premium
+            reward = self.gamma * relative_benefit + (1 - self.gamma) * premium
+
+            # Add noise and clip to [0, 1]
+            reward += np.random.uniform(-self.noise_level, self.noise_level)
+            return np.clip(reward, 0, 1)'''
+
+
+'''class HealthRewardCalculator:
     def __init__(self, base_cost, recovery_factor, max_cost, alpha=0.7, noise_level=0.05, reward_types=None):
         """
         Initialize the reward calculator.
@@ -227,19 +375,5 @@ class HealthRewardCalculator:
         cost_factor = self._hospital_reward(cost)
         reward = self.alpha * recovery_factor + (1 - self.alpha) * cost_factor
         reward += np.random.uniform(-self.noise_level, self.noise_level)
-        return np.clip(reward, 0, 1)
+        return np.clip(reward, 0, 1)'''
 
-
-'''if __name__ == "__main__":
-    base_cost = {'A': 6000, 'C': 2000}
-    recovery_factor = 400
-    max_cost = 12000
-
-    # Initialize the reward calculator
-    reward_calculator = ContinuousHealthcareRewardCalculator(base_cost, recovery_factor, max_cost, alpha=0.6)
-
-    # Compute rewards
-    simulated_data = simulate_patient_data()
-    rewarded_data = reward_calculator.compute_rewards(simulated_data)
-
-    print(rewarded_data)'''

@@ -22,7 +22,7 @@ def run_final_evaluation(data_processor, cv_results, all_train_set, test_set, cf
     final_training_data = data_processor.prepare_for_training(all_train_set, test_set)
 
     X_train_outcome, treatment_train, y_train_outcome = final_training_data['train_outcome']
-    X_test_outcome, treatment_test, y_test_outcome = final_training_data['val_or_test_outcome']
+    X_test_outcome, treatment_test, mu_test, y_test_outcome = final_training_data['val_or_test_outcome']
 
     X_train_reward, y_train_rewards = final_training_data['train_reward']
     X_test_reward, y_test_rewards = final_training_data['val_or_test_reward']

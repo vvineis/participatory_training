@@ -44,10 +44,12 @@ def main(cfg: DictConfig):
 
     print(f"Initialized Reward Calculator: {reward_calculator}")
     df_ready = reward_calculator.compute_rewards(df)
-    print(f'df_ready:{df_ready.head()}')
+    #print(f"df_ready:{df_ready[['Action', 'Outcome', 'x23', 'Parent_reward', 'Healthcare_Provider_reward', 'Policy_Maker_reward']].head()}")
+
 
     # Instantiate ranking criteria if needed (if create_ranking_criteria returns specific values)
     ranking_criteria = cfg.criteria.ranking_criteria
+
     metrics_for_evaluation = cfg.criteria.metrics_for_evaluation
     ranking_weights = cfg.ranking_weights
     #print("Decision Criteria:", cfg.decision_criteria)
