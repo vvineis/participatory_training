@@ -212,7 +212,7 @@ class DataProcessor:
         return X, treatment, mu,y
 
     def prepare_for_reward_prediction(self, df):
-        reward_features = self.feature_columns + self.categorical_columns #['Income', 'Credit Score', 'Loan Amount', 'Interest Rate', 'Action', 'Outcome']
+        reward_features = self.feature_columns + self.categorical_columns #['Income', 'Credit_Score', 'Loan_Amount', 'Interest_Rate', 'Action', 'Outcome']
         X = df[reward_features]
         
         # Dynamically retrieve reward columns based on self.reward_types

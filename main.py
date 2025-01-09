@@ -12,10 +12,10 @@ import os
 import time
 from omegaconf import OmegaConf
 
-def save_results(cfg, cv_results, final_results):
+def save_results(cfg, cv_results, final_results, suggested_params_outcome, suggested_params_reward, final_outcome_score):
     # Create a unique folder for each run
     unique_id = time.strftime("%Y%m%d-%H%M%S")  # Timestamp for uniqueness
-    result_subfolder = os.path.join(cfg.result_path, f"run_{unique_id}_Accuracy_{cfg.ranking_weights.Accuracy}")
+    result_subfolder = os.path.join(cfg.result_path, f"run_{unique_id}_Acc_{cfg.ranking_weights.Accuracy}_Fair_{cfg.ranking_weights.Demographic_Parity}")
     os.makedirs(result_subfolder, exist_ok=True)
 
     # Save results to the specific subfolder
@@ -25,6 +25,14 @@ def save_results(cfg, cv_results, final_results):
     final_results['ranked_decision_metrics_df'].to_csv(
         os.path.join(result_subfolder, 'final_ranked_decision_metrics.csv'), index=False
     )
+
+    # Save text results
+    text_file_path = os.path.join(result_subfolder, 'suggested_params_and_scores.txt')
+    with open(text_file_path, 'w') as f:
+        f.write(f"Suggested Params Outcome: {suggested_params_outcome}\n")
+        f.write(f"Suggested Params Reward: {suggested_params_reward}\n")
+        f.write(f"Final Outcome Score: {final_outcome_score}\n")
+
 
     print(f"Results saved to: {result_subfolder}")
 
@@ -36,29 +44,21 @@ def main(cfg: DictConfig):
 
     # Load data
     df = pd.read_csv(cfg.data_path)
-    df = df.iloc[0:cfg.sample_size]  # Limit data if needed for testing
+    df = df.iloc[0:cfg.sample_size] 
 
-    # Initialize RewardCalculator with reward types from configuration
-    # Dynamically instantiate the correct reward calculator
     reward_calculator = instantiate(cfg.reward_calculator)
 
     print(f"Initialized Reward Calculator: {reward_calculator}")
     df_ready = reward_calculator.compute_rewards(df)
-    #print(f"df_ready:{df_ready[['Action', 'Outcome', 'x23', 'Parent_reward', 'Healthcare_Provider_reward', 'Policy_Maker_reward']].head()}")
 
-
-    # Instantiate ranking criteria if needed (if create_ranking_criteria returns specific values)
     ranking_criteria = cfg.criteria.ranking_criteria
 
     metrics_for_evaluation = cfg.criteria.metrics_for_evaluation
     ranking_weights = cfg.ranking_weights
     #print("Decision Criteria:", cfg.decision_criteria)
 
-    #print("Ranking Criteria:", ranking_criteria)
-    #print("Metrics for Evaluation:", metrics_for_evaluation)
     print("Ranking Weights:", ranking_weights)
     
-    # Initialize the DataProcessor
     data_processor = DataProcessor(
         df=df_ready,
         cfg= cfg, 
@@ -69,8 +69,6 @@ def main(cfg: DictConfig):
     print("Train set shape:", all_train_set.shape)
     print("Test set shape:", test_set.shape)
 
-
-    # Initialize the CrossValidator with instantiated classifier and regressor
     cross_validator = CrossValidator(
         cfg=cfg,
         process_train_val_folds=process_train_val_folds
@@ -85,13 +83,13 @@ def main(cfg: DictConfig):
     print(cv_results)
 
     print("Training final models on entire training set and evaluating on test set...")
-    final_results = run_final_evaluation(data_processor, cv_results, all_train_set, test_set,  cfg)
+    final_results, suggested_params_outcome, suggested_params_reward, final_outcome_score = run_final_evaluation(data_processor, cv_results, all_train_set, test_set,  cfg)
     print("Final evaluation results:")
     print(final_results)
 
     os.makedirs(cfg.result_path, exist_ok=True)
 
-    save_results(cfg, cv_results, final_results)
+    save_results(cfg, cv_results, final_results, suggested_params_outcome, suggested_params_reward, final_outcome_score)
 
     # Save results to the specified directory
     #cv_results['ranked_decision_metrics_df'].to_csv(os.path.join(cfg.result_path, 'cv_ranked_decision_metrics.csv'), index=False)

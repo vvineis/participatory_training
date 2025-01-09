@@ -31,9 +31,9 @@ class FairnessMetrics:
 
     def get_metrics(self, fairness_metrics_list):
         available_metrics = {
-            'Demographic Parity': self._compute_demographic_parity,
-            'Equal Opportunity': self._compute_equal_opportunity,
-            'Conditional Outcome Parity': self._compute_cond_outcome_parity
+            'Demographic_Parity': self._compute_demographic_parity,
+            'Equal_Opportunity': self._compute_equal_opportunity,
+            'Conditional_Outcome_Parity': self._compute_cond_outcome_parity
         }
 
         selected_metrics = {}

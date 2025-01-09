@@ -5,36 +5,36 @@ result_path: "C:/Users/Vittoria/Documents/GitHub/participatory_training/results/
 
 criteria:
   ranking_criteria:
-    Demographic Parity: zero
+    Demographic_Parity: zero
     Total_cognitive_score: max
     Avg_outcome_difference: min
     Percentage_treated: max
     Mean_outcome_treated: max
     Mean_outcome_control: max
     Accuracy: max
-    Mean Regret: min
+    Mean_Regret: min
     Cost_effectiveness: max
 
   metrics_for_evaluation:
-    - Demographic Parity
+    - Demographic_Parity
     - Total_cognitive_score
     - Avg_outcome_difference
     - Percentage_treated
     - Mean_outcome_treated
     - Mean_outcome_control
     - Accuracy
-    - Mean Regret
+    - Mean_Regret
     - Cost_effectiveness
   
   ranking_weights:
-    Demographic Parity: 0.2
+    Demographic_Parity: 0.2
     Total_cognitive_score: 0.2
     Avg_outcome_difference: 0
     Percentage_treated: 0
     Mean_outcome_treated: 0
     Mean_outcome_control: 0
     Accuracy: 0.4
-    Mean Regret: 0
+    Mean_Regret: 0
     Cost_effectiveness: 0.2
 
 case_specific_metrics: 
@@ -55,10 +55,10 @@ case_specific_metrics:
 
 standard_metrics: 
   - Accuracy
-  - Mean Regret
+  - Mean_Regret
 
 fairness_metrics: 
-  - Demographic Parity
+  - Demographic_Parity
 
 reward_calculator:
   _target_: utils.rewards.get_rewards.HealthRewardCalculator
@@ -72,7 +72,7 @@ models:
     model_class: CausalOutcomeModel
     learner:
       _target_: xgboost.XGBRegressor
-      random_state: 111
+      random_state: 42
     param_grid:
       max_depth: [5]
       n_estimators: [20, 50]

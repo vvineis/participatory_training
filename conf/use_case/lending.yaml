@@ -5,39 +5,42 @@ result_path: "C:/Users/Vittoria/Documents/GitHub/participatory_training/results/
 
 criteria:
   ranking_criteria:
-    Demographic Parity: zero
-    Equal Opportunity: zero
-    Conditional Outcome Parity: zero
-    Total Profit: max
+    Demographic_Parity: zero
+    Equal_Opportunity: zero
+    Conditional_Outcome_Parity: zero
+    Total_Profit: max
     Accuracy: max
-    Unexploited Profit: min
+    Unexploited_Profit: min
+    Total_loss: min
 
   metrics_for_evaluation:
-    - Demographic Parity
-    - Equal Opportunity
-    - Conditional Outcome Parity
-    - Total Profit
+    - Demographic_Parity
+    - Equal_Opportunity
+    - Conditional_Outcome_Parity
+    - Total_Profit
     - Accuracy
-    - Unexploited Profit
+    - Unexploited_Profit
+    - Total_loss
 
   ranking_weights:
-    Demographic Parity: 0.2
-    Equal Opportunity: 0
-    Conditional Outcome Parity: 0.2
-    Total Profit: 0.2
+    Demographic_Parity: 0.2
+    Equal_Opportunity: 0
+    Conditional_Outcome_Parity: 0.2
+    Total_Profit: 0.2
     Accuracy: 0.4
-    Unexploited Profit: 0.0
+    Unexploited_Profit: 0.0
+    Total_Loss: 0.0
 
 case_specific_metrics: 
   metrics: 
-    - Total Profit
-    - Total Loss
-    - Unexploited Profit
+    - Total_Profit
+    - Total_Loss
+    - Unexploited_Profit
 
   case_specific_metrics_module: 
     _target_: utils.metrics.case_specific_metrics.LendingCaseMetrics
 
-  positive_attribute_for_fairness: 'Applicant Type'
+  positive_attribute_for_fairness: 'Applicant_Type'
   positive_group_value: 1
 
 standard_metrics: 
@@ -47,9 +50,9 @@ standard_metrics:
   - Accuracy
 
 fairness_metrics: 
-  - Demographic Parity
-  - Equal Opportunity
-  - Conditional Outcome Parity
+  - Demographic_Parity
+  - Equal_Opportunity
+  - Conditional_Outcome_Parity
 
 reward_calculator:
   _target_: utils.rewards.get_rewards.RewardCalculator
@@ -85,26 +88,26 @@ models:
 actions_outcomes:
   actions_set:
     - Grant
-    - Grant lower
-    - Not Grant
+    - Grant_lower
+    - Not_Grant
 
   positive_actions_set:
     - Grant
-    - Grant lower
+    - Grant_lower
 
   outcomes_set:
-    - Fully Repaid
-    - Partially Repaid
-    - Not Repaid
+    - Fully_Repaid
+    - Partially_Repaid
+    - Not_Repaid
   
   positive_outcomes_set:
-    - Fully Repaid
-    - Partially Repaid
+    - Fully_Repaid
+    - Partially_Repaid
 
   mapping:
-    Fully Repaid: Grant
-    Not Repaid: Not Grant
-    default: Grant lower
+    Fully_Repaid: Grant
+    Not_Repaid: Not_Grant
+    default: Grant_lower
 
 actors: 
   actor_list: 
@@ -122,22 +125,22 @@ actors:
 augmentation_for_rewards:
   augmentation_parameters:
     actions_set: ${actions_outcomes.actions_set}
-    additional_arguments: ["Applicant Type", "Loan Amount", "Interest Rate"]
+    additional_arguments: ["Applicant_Type", "Loan_Amount", "Interest_Rate"]
 
 
 context:
   feature_columns:
     - Income
-    - Credit Score
-    - Loan Amount
-    - Interest Rate
+    - Credit_Score
+    - Loan_Amount
+    - Interest_Rate
 
   columns_to_display:
     - Income
-    - Credit Score
-    - Loan Amount
-    - Interest Rate
-    - Applicant Type
+    - Credit_Score
+    - Loan_Amount
+    - Interest_Rate
+    - Applicant_Type
     - Recoveries
 
   

@@ -31,6 +31,7 @@ def run_final_evaluation(data_processor, cv_results, all_train_set, test_set, cf
     suggested_params_outcome = cv_results['suggested_params_outcome']
     suggested_params_reward = cv_results['suggested_params_reward']
 
+
     # Train final outcome model
     # Dynamically initialize and train the outcome model
     model_class = get_model_class(cfg.models.outcome.model_class)
@@ -100,4 +101,4 @@ def run_final_evaluation(data_processor, cv_results, all_train_set, test_set, cf
     )
 
     print("Final evaluation on test set completed.")
-    return test_results_dict
+    return test_results_dict, suggested_params_outcome, suggested_params_reward, final_outcome_score

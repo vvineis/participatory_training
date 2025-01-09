@@ -94,7 +94,7 @@ class SummaryProcessor:
         return summary_df
     
     def _map_outcome_to_action(self, outcome):
-        return self.mapping.get(outcome, self.mapping.get('default', 'Grant lower'))
+        return self.mapping.get(outcome, self.mapping.get('default', 'Grant_lower'))
     
     def _get_random_action(self):
         """Select a random action from the actions set."""

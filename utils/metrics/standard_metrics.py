@@ -82,7 +82,7 @@ class StandardMetrics:
                             (row[self.a_outcome_col] if row[self.decision_col] == 'A' else row[self.c_outcome_col]),
                 axis=1
             )
-            metrics['Mean Regret'] = regret.mean()
+            metrics['Mean_Regret'] = regret.mean()
 
         return metrics
 

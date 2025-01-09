@@ -6,72 +6,72 @@ class RewardCalculator:
     REWARD_STRUCTURES = {
         0: {  # Non-vulnerable applicants
             'Bank': {
-                ('Grant', 'Fully Repaid'): 1.0,
-                ('Grant', 'Partially Repaid'): 0.5,
-                ('Grant', 'Not Repaid'): 0.0,
-                ('Grant lower', 'Fully Repaid'): 0.8,
-                ('Grant lower', 'Partially Repaid'): 1,
-                ('Grant lower', 'Not Repaid'): 0,
-                ('Not Grant', 'Fully Repaid'): 0.2,
-                ('Not Grant', 'Partially Repaid'): 0.5,
-                ('Not Grant', 'Not Repaid'): 1.0
+                ('Grant', 'Fully_Repaid'): 1.0,
+                ('Grant', 'Partially_Repaid'): 0.5,
+                ('Grant', 'Not_Repaid'): 0.0,
+                ('Grant_lower', 'Fully_Repaid'): 0.8,
+                ('Grant_lower', 'Partially_Repaid'): 1,
+                ('Grant_lower', 'Not_Repaid'): 0,
+                ('Not_Grant', 'Fully_Repaid'): 0.2,
+                ('Not_Grant', 'Partially_Repaid'): 0.5,
+                ('Not_Grant', 'Not_Repaid'): 1.0
             },
             'Applicant': {
-                ('Grant', 'Fully Repaid'): 1.0,
-                ('Grant', 'Partially Repaid'): 0.5,
-                ('Grant', 'Not Repaid'): 0.3,
-                ('Grant lower', 'Fully Repaid'): 0.7,
-                ('Grant lower', 'Partially Repaid'): 0.8,
-                ('Grant lower', 'Not Repaid'): 0.4,
-                ('Not Grant', 'Fully Repaid'): 0.2,
-                ('Not Grant', 'Partially Repaid'): 0.5,
-                ('Not Grant', 'Not Repaid'): 0.7
+                ('Grant', 'Fully_Repaid'): 1.0,
+                ('Grant', 'Partially_Repaid'): 0.5,
+                ('Grant', 'Not_Repaid'): 0.3,
+                ('Grant_lower', 'Fully_Repaid'): 0.7,
+                ('Grant_lower', 'Partially_Repaid'): 0.8,
+                ('Grant_lower', 'Not_Repaid'): 0.4,
+                ('Not_Grant', 'Fully_Repaid'): 0.2,
+                ('Not_Grant', 'Partially_Repaid'): 0.5,
+                ('Not_Grant', 'Not_Repaid'): 0.7
             },
             'Regulatory': {
-                ('Grant', 'Fully Repaid'): 1.0,
-                ('Grant', 'Partially Repaid'): 0.2,
-                ('Grant', 'Not Repaid'): 0.0,
-                ('Grant lower', 'Fully Repaid'): 0.8,
-                ('Grant lower', 'Partially Repaid'): 1,
-                ('Grant lower', 'Not Repaid'): 0.1,
-                ('Not Grant', 'Fully Repaid'): 0.5,
-                ('Not Grant', 'Partially Repaid'): 0.7,
-                ('Not Grant', 'Not Repaid'): 1.0
+                ('Grant', 'Fully_Repaid'): 1.0,
+                ('Grant', 'Partially_Repaid'): 0.2,
+                ('Grant', 'Not_Repaid'): 0.0,
+                ('Grant_lower', 'Fully_Repaid'): 0.8,
+                ('Grant_lower', 'Partially_Repaid'): 1,
+                ('Grant_lower', 'Not_Repaid'): 0.1,
+                ('Not_Grant', 'Fully_Repaid'): 0.5,
+                ('Not_Grant', 'Partially_Repaid'): 0.7,
+                ('Not_Grant', 'Not_Repaid'): 1.0
             }
         },
         1: {  # Vulnerable applicants
             'Bank': {
-                ('Grant', 'Fully Repaid'): 1.0,
-                ('Grant', 'Partially Repaid'): 0.5,
-                ('Grant', 'Not Repaid'): 0.0,
-                ('Grant lower', 'Fully Repaid'): 0.8,
-                ('Grant lower', 'Partially Repaid'): 1,
-                ('Grant lower', 'Not Repaid'): 0,
-                ('Not Grant', 'Fully Repaid'): 0.0,
-                ('Not Grant', 'Partially Repaid'): 0.2,
-                ('Not Grant', 'Not Repaid'): 1.0
+                ('Grant', 'Fully_Repaid'): 1.0,
+                ('Grant', 'Partially_Repaid'): 0.5,
+                ('Grant', 'Not_Repaid'): 0.0,
+                ('Grant_lower', 'Fully_Repaid'): 0.8,
+                ('Grant_lower', 'Partially_Repaid'): 1,
+                ('Grant_lower', 'Not_Repaid'): 0,
+                ('Not_Grant', 'Fully_Repaid'): 0.0,
+                ('Not_Grant', 'Partially_Repaid'): 0.2,
+                ('Not_Grant', 'Not_Repaid'): 1.0
             },
             'Applicant': {
-                ('Grant', 'Fully Repaid'): 1.0,
-                ('Grant', 'Partially Repaid'): 0.7,
-                ('Grant', 'Not Repaid'): 0.5,
-                ('Grant lower', 'Fully Repaid'): 0.5,
-                ('Grant lower', 'Partially Repaid'): 0.8,
-                ('Grant lower', 'Not Repaid'): 0.3,
-                ('Not Grant', 'Fully Repaid'): 0.0,
-                ('Not Grant', 'Partially Repaid'): 0.2,
-                ('Not Grant', 'Not Repaid'): 0.6
+                ('Grant', 'Fully_Repaid'): 1.0,
+                ('Grant', 'Partially_Repaid'): 0.7,
+                ('Grant', 'Not_Repaid'): 0.5,
+                ('Grant_lower', 'Fully_Repaid'): 0.5,
+                ('Grant_lower', 'Partially_Repaid'): 0.8,
+                ('Grant_lower', 'Not_Repaid'): 0.3,
+                ('Not_Grant', 'Fully_Repaid'): 0.0,
+                ('Not_Grant', 'Partially_Repaid'): 0.2,
+                ('Not_Grant', 'Not_Repaid'): 0.6
             },
             'Regulatory': {
-                ('Grant', 'Fully Repaid'): 1.0,
-                ('Grant', 'Partially Repaid'): 0.5,
-                ('Grant', 'Not Repaid'): 0.3,
-                ('Grant lower', 'Fully Repaid'): 0.7,
-                ('Grant lower', 'Partially Repaid'): 1,
-                ('Grant lower', 'Not Repaid'): 0.2,
-                ('Not Grant', 'Fully Repaid'): 0.3,
-                ('Not Grant', 'Partially Repaid'): 0.5,
-                ('Not Grant', 'Not Repaid'): 0.8
+                ('Grant', 'Fully_Repaid'): 1.0,
+                ('Grant', 'Partially_Repaid'): 0.5,
+                ('Grant', 'Not_Repaid'): 0.3,
+                ('Grant_lower', 'Fully_Repaid'): 0.7,
+                ('Grant_lower', 'Partially_Repaid'): 1,
+                ('Grant_lower', 'Not_Repaid'): 0.2,
+                ('Not_Grant', 'Fully_Repaid'): 0.3,
+                ('Not_Grant', 'Partially_Repaid'): 0.5,
+                ('Not_Grant', 'Not_Repaid'): 0.8
             }
         }
     }
@@ -127,7 +127,7 @@ class RewardCalculator:
     def compute_rewards(self, df):
         # Apply get_rewards across DataFrame with lambda for vectorization
         rewards = df.apply(lambda row: self.get_rewards(
-            row['Action'], row['Outcome'], row['Applicant Type'], row['Loan Amount'], row['Interest Rate']), axis=1
+            row['Action'], row['Outcome'], row['Applicant_Type'], row['Loan_Amount'], row['Interest_Rate']), axis=1
         )
         
         # Split rewards tuple into separate columns and assign them
