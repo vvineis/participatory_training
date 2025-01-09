@@ -50,7 +50,7 @@ class MetricsCalculator:
                         suggestions_df[f"{action}_outcome"] <= self.cfg.case_specific_metrics.threshold_outcome
                             ).astype(int)
                     suggestions_df = self.merge_predicted(suggestions_df, decision_col)
-                    print(suggestions_df[[decision_col,'A_outcome_binary','C_outcome_binary', 'Predicted_Binary']])
+                    #print(suggestions_df[[decision_col,'A_outcome_binary','C_outcome_binary', 'Predicted_Binary']])
                     fairness_calculator = FairnessMetrics(cfg=self.cfg, suggestions_df=suggestions_df, decision_col=decision_col, outcome_col='Predicted_Binary')
                     actor_metrics_calculator = HealthCaseMetrics(suggestions_df, decision_col, true_outcome_col, self.cfg)
                 

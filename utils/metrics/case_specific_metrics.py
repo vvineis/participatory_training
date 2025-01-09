@@ -68,28 +68,50 @@ class HealthCaseMetrics:
         self.decision_col = decision_col
         self.true_outcome_col = true_outcome_col
         self.cfg = cfg
-
-    def compute_number_treated(self):
+    
+    def compute_percentage_treated(self):
         # Ensure the decision column is valid
-        print(self.suggestions_df.columns)
         if self.decision_col not in self.suggestions_df.columns:
             raise ValueError(f"Decision column {self.decision_col} not found in the DataFrame")
-        
-        
-        # Compute total cost
-        total_treated  = 0
-        for decision, group in self.suggestions_df.groupby(self.decision_col):
-            if decision == 'A':  # Adjust this condition based on your definition of treated
-                total_treated += len(group)
-        
-        return total_treated
+
+        # Compute total treated and total samples
+        total_samples = len(self.suggestions_df)
+        total_treated = len(self.suggestions_df[self.suggestions_df[self.decision_col] == 'A'])
+
+        # Compute percentage of treated
+        percentage_treated = (total_treated / total_samples) * 100
+        return percentage_treated
+
+
+    def compute_avg_outcome_difference(self):
+        # Ensure the decision and outcome columns are valid
+        if self.decision_col not in self.suggestions_df.columns:
+            raise ValueError(f"Decision column {self.decision_col} not found in the DataFrame")
+        if 'A_outcome' not in self.suggestions_df.columns or 'C_outcome' not in self.suggestions_df.columns:
+            raise ValueError("Outcome columns (A_outcome, C_outcome) not found in the DataFrame")
+
+        # Compute mean outcomes for treated and control groups
+        treated_outcome = self.suggestions_df[self.suggestions_df[self.decision_col] == 'A']['A_outcome'].mean()
+        control_outcome = self.suggestions_df[self.suggestions_df[self.decision_col] == 'C']['C_outcome'].mean()
+
+        # Compute average difference
+        avg_difference = treated_outcome - control_outcome
+        return avg_difference
+
+
+    def compute_total_cognitive_score(self):
+        # Ensure the outcome columns are valid
+        if 'A_outcome' not in self.suggestions_df.columns or 'C_outcome' not in self.suggestions_df.columns:
+            raise ValueError("Outcome columns (A_outcome, C_outcome) not found in the DataFrame")
+
+        # Compute total scores
+        total_score_treated = self.suggestions_df[self.suggestions_df[self.decision_col] == 'A']['A_outcome'].sum()
+        total_score_control = self.suggestions_df[self.suggestions_df[self.decision_col] == 'C']['C_outcome'].sum()
+
+        # Return total combined score
+        return total_score_treated + total_score_control
     
     def compute_mean_outcome(self):
-        """
-        Compute the total outcome separately for treated and control groups.
-        :return: A tuple containing total outcome for treated and control groups.
-        """
-
         # Initialize totals
         total_outcome_treated = 0.0
         total_outcome_control = 0.0
@@ -103,20 +125,56 @@ class HealthCaseMetrics:
 
         return total_outcome_treated, total_outcome_control
     
+    def compute_total_cost_effectiveness(self):
+   
+        # Ensure the necessary columns are valid
+        required_columns = ['A_outcome', 'C_outcome', self.decision_col]
+        for col in required_columns:
+            if col not in self.suggestions_df.columns:
+                raise ValueError(f"Required column {col} not found in the DataFrame.")
+
+        # Initialize cost-effectiveness metrics
+        treated_cost_effectiveness = 0.0
+        control_cost_effectiveness = 0.0
+
+        # Treatment costs (customize based on your scenario)
+        treatment_costs = {'A': self.cfg.reward_calculator.base_cost.get('A', 100), 
+                        'C': self.cfg.reward_calculator.base_cost.get('C', 10)}
+
+        # Compute cost-effectiveness for treated group
+        treated_group = self.suggestions_df[self.suggestions_df[self.decision_col] == 'A']
+        if not treated_group.empty:
+            treated_outcome_improve = (
+                treated_group['A_outcome'].mean() - self.suggestions_df['C_outcome'].mean()
+            ) 
+        else:
+            treated_outcome_improve=0
+
+        cost_effect= treated_outcome_improve  / (treatment_costs['A'] - treatment_costs['C'])
+
+
+        return cost_effect
+
     def compute_all_metrics(self):
         """
         Compute and return all relevant metrics.
         :return: A dictionary containing all computed metrics.
         """
-        total_treated = self.compute_number_treated()
+        percentage_treated = self.compute_percentage_treated()
+        avg_outcome_difference = self.compute_avg_outcome_difference()
+        total_cognitive_score = self.compute_total_cognitive_score()
         mean_outcome_treated, mean_outcome_control = self.compute_mean_outcome()
+        cost_effectiveness = self.compute_total_cost_effectiveness()
 
         return {
-            'Total_treated': total_treated,
+            'Percentage_treated': percentage_treated,
+            'Avg_outcome_difference': avg_outcome_difference,
+            'Total_cognitive_score': total_cognitive_score,
             'Mean_outcome_treated': mean_outcome_treated,
             'Mean_outcome_control': mean_outcome_control,
+            'Cost_effectiveness': cost_effectiveness
         }
-    
+            
     def get_metrics(self, case_metrics_list):
         """
         Retrieve selected metrics from the available metrics.
@@ -125,9 +183,12 @@ class HealthCaseMetrics:
         """
         # Define available metrics
         available_metrics = {
-            'Total_treated': self.compute_number_treated,
+            'Percentage_treated': self.compute_percentage_treated,
+            'Avg_outcome_difference': self.compute_avg_outcome_difference,
+            'Total_cognitive_score': self.compute_total_cognitive_score,
             'Mean_outcome_treated': lambda: self.compute_mean_outcome()[0],  # Treated mean outcome
             'Mean_outcome_control': lambda: self.compute_mean_outcome()[1],  # Control mean outcome
+            'Cost_effectiveness': self.compute_total_cost_effectiveness
         }
 
         # Compute selected metrics

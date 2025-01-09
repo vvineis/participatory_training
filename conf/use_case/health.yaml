@@ -9,27 +9,42 @@ criteria:
     #Equal Opportunity: zero
     #Equalized Odds: zero
     #Calibration: zero
+    Total_cognitive_score: max
+    Avg_outcome_difference: min
+    Percentage_treated: max
     Mean_outcome_treated: max
     Mean_outcome_control: max
     Accuracy: max
+    Cost_effectiveness: max
 
   metrics_for_evaluation:
     - Demographic Parity
+    - Total_cognitive_score
+    - Avg_outcome_difference
+    - Percentage_treated
     - Mean_outcome_treated
     - Mean_outcome_control
     - Accuracy
+    - Cost_effectiveness
   
   ranking_weights:
     Demographic Parity: 0.2
-    Mean_outcome_treated: 0.2
-    Mean_outcome_control: 0.2
+    Total_cognitive_score: 0.2
+    Avg_outcome_difference: 0
+    Percentage_treated: 0
+    Mean_outcome_treated: 0
+    Mean_outcome_control: 0
     Accuracy: 0.4
+    Cost_effectiveness: 0.2
 
 case_specific_metrics: 
   metrics: 
-    - 'Total_treated'
+    - 'Total_cognitive_score'
+    - 'Avg_outcome_difference'
+    - 'Percentage_treated'
     - 'Mean_outcome_treated'
     - 'Mean_outcome_control'
+    - 'Cost_effectiveness'
 
   case_specific_metrics_module: 
     _target_: utils.metrics.case_specific_metrics.HealthCaseMetrics
@@ -45,7 +60,7 @@ standard_metrics:
 reward_calculator:
   _target_: utils.rewards.get_rewards.HealthRewardCalculator
   reward_types: ${actors.reward_types}
-  base_cost: {'A': 1, 'C': 0}
+  base_cost: {'A': 100, 'C': 10}
 
 
 models:
@@ -96,8 +111,8 @@ actors:
   actor_list: 
     - Parent
     - Healthcare_Provider
-    - Policy_maker
-    - Outcome_Pred_Model
+    - Policy_Maker
+    - Outcome_Maxim
 
   reward_types: 
     - Parent

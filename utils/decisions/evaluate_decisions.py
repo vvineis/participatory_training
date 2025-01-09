@@ -57,7 +57,7 @@ class SummaryProcessor:
         if self.model_type == 'classification':
             suggested_actions = {actor: [] for actor in self.reward_types + ['Oracle', 'Outcome_Pred_Model', 'Random']}
         elif self.model_type == 'causal_regression':
-            suggested_actions = {actor: [] for actor in self.reward_types + ['Outcome_Pred_Model', 'Random']}
+            suggested_actions = {actor: [] for actor in self.reward_types + ['Outcome_Maxim', 'Random']}
 
         # Compute suggested actions for each row
         for idx, (expected_rewards, predicted_outcomes) in enumerate(zip(expected_rewards_list, pred_list)):
@@ -79,7 +79,7 @@ class SummaryProcessor:
                 best_action = self._get_best_action_given_outcome(exp_outcome, obj='max')
                 #print(f'best_action {best_action}')
                 # Append the single best action for this row
-                suggested_actions['Outcome_Pred_Model'].append(best_action)
+                suggested_actions['Outcome_Maxim'].append(best_action)
 
                 # Add a random action for comparison
             suggested_actions['Random'].append(self._get_random_action())

@@ -212,20 +212,27 @@ class HealthRewardCalculator:
         return [rewards[reward_type] for reward_type in self.reward_types]
 
     def _healthcare_provider_reward(self, outcome, action):
-        """
-        Reward for Healthcare Providers based on cost-effectiveness.
-        """
-        # Get min and max outcomes for the specific treatment
-        min_outcome = self.min_outcome_action.get(action, 0)
-        max_outcome = self.max_outcome_action.get(action, 1)
-        
-        # Normalize outcome for the action
-        normalized_outcome = (outcome - min_outcome) / (max_outcome - min_outcome + 1e-10)
+        # Get the baseline outcome 
+        baseline_outcome = self.min_outcome_action.get('C', 2)
+        # Compute outcome improvement
+        outcome_improv = max(0, outcome - baseline_outcome)  # Ensure non-negative improvement
 
-        # Incorporate cost-effectiveness
-        cost_penalty = self.base_cost.get(action, 0)
-        reward = normalized_outcome * (1 - cost_penalty)
+        # Get the cost associated with the action
+        cost = self.base_cost.get(action, 0)
+  
+        # Reward calculation: emphasize improvement over cost
+        # Scale improvement based on cost, but give more weight to improvement
+        alpha = 0.8  # Weight for valuing improvement vs cost (0.8 gives 80% weight to improvement)
+        max_possible_improv = self.max_outcome_action.get('A', 12) - baseline_outcome
+        normalized_improv = outcome_improv / (max_possible_improv + 1e-10)  # Normalize improvement
+
+        # Calculate reward
+        reward = alpha * normalized_improv + (1 - alpha) * (1 - cost / max(self.base_cost.values()))
+        
+        # Add random noise for variability
         reward += np.random.uniform(-self.noise_level, self.noise_level)
+        
+        # Clip reward to [0, 1] range
         return np.clip(reward, 0, 1)
 
     def _policy_maker_reward(self, outcome, x23, action):

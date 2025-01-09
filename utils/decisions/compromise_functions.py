@@ -42,7 +42,7 @@ class KalaiSmorodinsky(SolutionStrategy):
 # Nash Bargaining Solution Strategy
 class NashBargainingSolution(SolutionStrategy):
     def compute(self, expected_rewards, disagreement_point, ideal_point, all_actions):
-        #print(expected_rewards, disagreement_point, idealS_point, all_actions)
+        print(expected_rewards, disagreement_point, ideal_point, all_actions)
         # Full Agreement: Check for actions that meet the disagreement point for all actors
         full_agreement_products = {
             action: prod(
@@ -76,8 +76,10 @@ class NashBargainingSolution(SolutionStrategy):
             best_action = max(partial_agreement_products, key=partial_agreement_products.get)
             return best_action, partial_agreement_products[best_action]
 
-        # If no actions meet even partial agreement, raise an error or handle as needed
-        raise ValueError("No actions meet full or partial agreement thresholds.")
+        # If no actions meet even partial agreement, raise a warning and use C:
+        print("No actions meet full or partial agreement thresholds. Using C as the default action.")
+        return 'C', 0
+    
 # Nash Social Welfare Strategy
 class NashSocialWelfare(SolutionStrategy):
     def compute(self, expected_rewards, disagreement_point, ideal_point, all_actions, epsilon=1e-6):

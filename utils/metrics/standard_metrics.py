@@ -48,13 +48,13 @@ class StandardMetrics:
     @property
     def is_correct(self):
         """
-        For causal regression: Determine if the decision minimizes the outcome.
+        For causal regression: Determine if the decision maximize the outcome.
         """
         if self._is_correct is None and self.a_outcome_col and self.c_outcome_col:
             self._is_correct = self.suggestions_df.apply(
                 lambda row: (
-                    (row[self.decision_col] == 'A' and row[self.a_outcome_col] <= row[self.c_outcome_col]) or
-                    (row[self.decision_col] == 'C' and row[self.c_outcome_col] <= row[self.a_outcome_col])
+                    (row[self.decision_col] == 'A' and row[self.a_outcome_col] >= row[self.c_outcome_col]) or
+                    (row[self.decision_col] == 'C' and row[self.c_outcome_col] >= row[self.a_outcome_col])
                 ),
                 axis=1
             )
@@ -79,12 +79,10 @@ class StandardMetrics:
                     metrics[metric] = classification_metric_functions[metric]()
         elif self.model_type == 'causal_regression':
             metrics['Accuracy'] = self.is_correct.mean()
-            metrics['Proportion Correct A Decisions'] = self.is_correct[self.suggestions_df[self.decision_col] == 'A'].mean()
-            metrics['Proportion Correct C Decisions'] = self.is_correct[self.suggestions_df[self.decision_col] == 'C'].mean()
 
             # Regret
             regret = self.suggestions_df.apply(
-                lambda row: min(row[self.a_outcome_col], row[self.c_outcome_col]) -
+                lambda row: max(row[self.a_outcome_col], row[self.c_outcome_col]) -
                             (row[self.a_outcome_col] if row[self.decision_col] == 'A' else row[self.c_outcome_col]),
                 axis=1
             )
