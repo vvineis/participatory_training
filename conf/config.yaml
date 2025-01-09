@@ -19,6 +19,7 @@ case_specific_metrics: ${use_case.case_specific_metrics}
 ranking_weights: ${use_case.criteria.ranking_weights}
 reward_calculator: ${use_case.reward_calculator}
 standard_metrics: ${use_case.standard_metrics}
+fairness_metrics: ${use_case.fairness_metrics}
 
 categorical_columns: 
   - Action
@@ -37,12 +38,6 @@ decision_criteria:
   - Compromise Programming
   - Proportional Fairness
 
-fairness: 
-  fairness_metrics: 
-    - Demographic Parity
-    - Equal Opportunity
-    - Equalized Odds
-    - Calibration
 
 
 

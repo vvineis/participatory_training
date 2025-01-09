@@ -6,15 +6,13 @@ result_path: "C:/Users/Vittoria/Documents/GitHub/participatory_training/results/
 criteria:
   ranking_criteria:
     Demographic Parity: zero
-    #Equal Opportunity: zero
-    #Equalized Odds: zero
-    #Calibration: zero
     Total_cognitive_score: max
     Avg_outcome_difference: min
     Percentage_treated: max
     Mean_outcome_treated: max
     Mean_outcome_control: max
     Accuracy: max
+    Mean Regret: min
     Cost_effectiveness: max
 
   metrics_for_evaluation:
@@ -25,6 +23,7 @@ criteria:
     - Mean_outcome_treated
     - Mean_outcome_control
     - Accuracy
+    - Mean Regret
     - Cost_effectiveness
   
   ranking_weights:
@@ -35,6 +34,7 @@ criteria:
     Mean_outcome_treated: 0
     Mean_outcome_control: 0
     Accuracy: 0.4
+    Mean Regret: 0
     Cost_effectiveness: 0.2
 
 case_specific_metrics: 
@@ -51,11 +51,14 @@ case_specific_metrics:
   
   positive_attribute_for_fairness: x23
   positive_group_value: 1
-  threshold_outcome: 2.223557401709045 #median value across all values
+  threshold_outcome: 2.223557401709045 #median value across all values in the train set
 
 standard_metrics: 
   - Accuracy
+  - Mean Regret
 
+fairness_metrics: 
+  - Demographic Parity
 
 reward_calculator:
   _target_: utils.rewards.get_rewards.HealthRewardCalculator

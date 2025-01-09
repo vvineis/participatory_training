@@ -1,14 +1,10 @@
 from imblearn.over_sampling import SMOTE
 from sklearn.metrics import accuracy_score
-import pandas as pd
-from causalml.inference.meta import BaseXRegressor
-import matplotlib.pyplot as plt
-from xgboost import XGBRegressor
 import numpy as np
-from sklearn.linear_model import Ridge
-from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import RandomForestRegressor
 import warnings
+from causalml.inference.meta import BaseXRegressor
+from xgboost import XGBRegressor
+#from sklearn.linear_model import Ridger
 from sklearn.exceptions import ConvergenceWarning
 
 class OutcomeModel:
@@ -69,9 +65,6 @@ class CausalOutcomeModel:
             print(f"Warning: The learner is not XGBRegressor. It is {type(self.learner_instance)}.")
         
         self.model = BaseXRegressor(learner=self.learner_instance, control_name=self.control_name)
-        #print(f'X_train {X_train.head()}')
-        #print(f'treatment_train, {treatment_train.head()}')
-        #print(f'y_train {y_train}')
         self.model.fit(X=X_train, treatment=treatment_train, y=y_train)
         return self.model
 

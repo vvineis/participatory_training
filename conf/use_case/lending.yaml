@@ -7,8 +7,7 @@ criteria:
   ranking_criteria:
     Demographic Parity: zero
     Equal Opportunity: zero
-    Equalized Odds: zero
-    Calibration: zero
+    Conditional Outcome Parity: zero
     Total Profit: max
     Accuracy: max
     Unexploited Profit: min
@@ -16,8 +15,7 @@ criteria:
   metrics_for_evaluation:
     - Demographic Parity
     - Equal Opportunity
-    - Equalized Odds
-    - Calibration
+    - Conditional Outcome Parity
     - Total Profit
     - Accuracy
     - Unexploited Profit
@@ -25,8 +23,7 @@ criteria:
   ranking_weights:
     Demographic Parity: 0.2
     Equal Opportunity: 0
-    Equalized Odds: 0
-    Calibration: 0.2
+    Conditional Outcome Parity: 0.2
     Total Profit: 0.2
     Accuracy: 0.4
     Unexploited Profit: 0.0
@@ -48,6 +45,11 @@ standard_metrics:
   - Recall 
   - F1 Score 
   - Accuracy
+
+fairness_metrics: 
+  - Demographic Parity
+  - Equal Opportunity
+  - Conditional Outcome Parity
 
 reward_calculator:
   _target_: utils.rewards.get_rewards.RewardCalculator
