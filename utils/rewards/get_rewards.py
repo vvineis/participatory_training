@@ -3,7 +3,7 @@ import pandas as pd
 
 class RewardCalculator:
     # Define base reward structures
-    REWARD_STRUCTURES = {
+    '''REWARD_STRUCTURES = {
         0: {  # Non-vulnerable applicants
             'Bank': {
                 ('Grant', 'Fully_Repaid'): 1.0,
@@ -74,7 +74,154 @@ class RewardCalculator:
                 ('Not_Grant', 'Not_Repaid'): 0.8
             }
         }
+    }'''
+
+    '''REWARD_STRUCTURES = {
+        0: {  # Non-vulnerable applicants
+            'Bank': {
+                ('Grant', 'Fully_Repaid'): 1.0,
+                ('Grant', 'Partially_Repaid'): 0.2,
+                ('Grant', 'Not_Repaid'): 0.0,
+                ('Grant_lower', 'Fully_Repaid'): 0.4,
+                ('Grant_lower', 'Partially_Repaid'): 0.5,
+                ('Grant_lower', 'Not_Repaid'): 0,
+                ('Not_Grant', 'Fully_Repaid'): 0.2,
+                ('Not_Grant', 'Partially_Repaid'): 0.5,
+                ('Not_Grant', 'Not_Repaid'): 1.0
+            },
+            'Applicant': {
+                ('Grant', 'Fully_Repaid'): 1.0,
+                ('Grant', 'Partially_Repaid'): 0.7,
+                ('Grant', 'Not_Repaid'): 0.5,
+                ('Grant_lower', 'Fully_Repaid'): 0.7,
+                ('Grant_lower', 'Partially_Repaid'): 0.8,
+                ('Grant_lower', 'Not_Repaid'): 0.6,
+                ('Not_Grant', 'Fully_Repaid'): 0,
+                ('Not_Grant', 'Partially_Repaid'): 0,
+                ('Not_Grant', 'Not_Repaid'): 0
+            },
+            'Regulatory': {
+                ('Grant', 'Fully_Repaid'): 1.0,
+                ('Grant', 'Partially_Repaid'): 0.2,
+                ('Grant', 'Not_Repaid'): 0.0,
+                ('Grant_lower', 'Fully_Repaid'): 0.8,
+                ('Grant_lower', 'Partially_Repaid'): 1,
+                ('Grant_lower', 'Not_Repaid'): 0.1,
+                ('Not_Grant', 'Fully_Repaid'): 0.5,
+                ('Not_Grant', 'Partially_Repaid'): 0.7,
+                ('Not_Grant', 'Not_Repaid'): 1.0
+            }
+        },
+        1: {  # Vulnerable applicants
+            'Bank': {
+                ('Grant', 'Fully_Repaid'): 1.0,
+                ('Grant', 'Partially_Repaid'): 0.5,
+                ('Grant', 'Not_Repaid'): 0.0,
+                ('Grant_lower', 'Fully_Repaid'): 0.5,
+                ('Grant_lower', 'Partially_Repaid'): 0.5,
+                ('Grant_lower', 'Not_Repaid'): 0,
+                ('Not_Grant', 'Fully_Repaid'): 0.0,
+                ('Not_Grant', 'Partially_Repaid'): 0.2,
+                ('Not_Grant', 'Not_Repaid'): 1.0
+            },
+            'Applicant': {
+                ('Grant', 'Fully_Repaid'): 1.0,
+                ('Grant', 'Partially_Repaid'): 0.8,
+                ('Grant', 'Not_Repaid'): 0.7,
+                ('Grant_lower', 'Fully_Repaid'): 0.8,
+                ('Grant_lower', 'Partially_Repaid'): 1,
+                ('Grant_lower', 'Not_Repaid'): 0.5,
+                ('Not_Grant', 'Fully_Repaid'): 0.0,
+                ('Not_Grant', 'Partially_Repaid'): 0,
+                ('Not_Grant', 'Not_Repaid'): 0.2
+            },
+            'Regulatory': {
+                ('Grant', 'Fully_Repaid'): 1.0,
+                ('Grant', 'Partially_Repaid'): 0.5,
+                ('Grant', 'Not_Repaid'): 0.3,
+                ('Grant_lower', 'Fully_Repaid'): 0.7,
+                ('Grant_lower', 'Partially_Repaid'): 1,
+                ('Grant_lower', 'Not_Repaid'): 0.2,
+                ('Not_Grant', 'Fully_Repaid'): 0.3,
+                ('Not_Grant', 'Partially_Repaid'): 0.5,
+                ('Not_Grant', 'Not_Repaid'): 0.8
+            }
+        }
+    }'''
+
+    REWARD_STRUCTURES = {
+        0: {  # Non-vulnerable applicants
+            'Bank': {
+                ('Grant', 'Fully_Repaid'): 1.0,
+                ('Grant', 'Partially_Repaid'): 0,
+                ('Grant', 'Not_Repaid'): 0.0,
+                ('Grant_lower', 'Fully_Repaid'): 0.8,
+                ('Grant_lower', 'Partially_Repaid'): 0,
+                ('Grant_lower', 'Not_Repaid'): 0,
+                ('Not_Grant', 'Fully_Repaid'): 0.5,
+                ('Not_Grant', 'Partially_Repaid'): 1,
+                ('Not_Grant', 'Not_Repaid'): 1.0
+            },
+            'Applicant': {
+                ('Grant', 'Fully_Repaid'): 1.0,
+                ('Grant', 'Partially_Repaid'): 0.8,
+                ('Grant', 'Not_Repaid'): 0.7,
+                ('Grant_lower', 'Fully_Repaid'): 0.7,
+                ('Grant_lower', 'Partially_Repaid'): 0.8,
+                ('Grant_lower', 'Not_Repaid'): 0.6,
+                ('Not_Grant', 'Fully_Repaid'): 0,
+                ('Not_Grant', 'Partially_Repaid'): 0,
+                ('Not_Grant', 'Not_Repaid'): 0
+            },
+            'Regulatory': {
+                ('Grant', 'Fully_Repaid'): 1.0,
+                ('Grant', 'Partially_Repaid'): 0.2,
+                ('Grant', 'Not_Repaid'): 0.0,
+                ('Grant_lower', 'Fully_Repaid'): 0.8,
+                ('Grant_lower', 'Partially_Repaid'): 1,
+                ('Grant_lower', 'Not_Repaid'): 0.1,
+                ('Not_Grant', 'Fully_Repaid'): 0.5,
+                ('Not_Grant', 'Partially_Repaid'): 0.7,
+                ('Not_Grant', 'Not_Repaid'): 1.0
+            }
+        },
+        1: {  # Vulnerable applicants
+            'Bank': {
+                ('Grant', 'Fully_Repaid'): 1.0,
+                ('Grant', 'Partially_Repaid'): 0,
+                ('Grant', 'Not_Repaid'): 0,
+                ('Grant_lower', 'Fully_Repaid'): 0.8,
+                ('Grant_lower', 'Partially_Repaid'): 0,
+                ('Grant_lower', 'Not_Repaid'): 0,
+                ('Not_Grant', 'Fully_Repaid'): 0.5,
+                ('Not_Grant', 'Partially_Repaid'): 1,
+                ('Not_Grant', 'Not_Repaid'): 1.0
+            },
+            'Applicant': {
+                ('Grant', 'Fully_Repaid'): 1.0,
+                ('Grant', 'Partially_Repaid'): 0.8,
+                ('Grant', 'Not_Repaid'): 0.7,
+                ('Grant_lower', 'Fully_Repaid'): 0.8,
+                ('Grant_lower', 'Partially_Repaid'): 1,
+                ('Grant_lower', 'Not_Repaid'): 0.6,
+                ('Not_Grant', 'Fully_Repaid'): 0.0,
+                ('Not_Grant', 'Partially_Repaid'): 0,
+                ('Not_Grant', 'Not_Repaid'): 0
+            },
+            'Regulatory': {
+                ('Grant', 'Fully_Repaid'): 1.0,
+                ('Grant', 'Partially_Repaid'): 0.5,
+                ('Grant', 'Not_Repaid'): 0.3,
+                ('Grant_lower', 'Fully_Repaid'): 0.7,
+                ('Grant_lower', 'Partially_Repaid'): 1,
+                ('Grant_lower', 'Not_Repaid'): 0.2,
+                ('Not_Grant', 'Fully_Repaid'): 0.3,
+                ('Not_Grant', 'Partially_Repaid'): 0.5,
+                ('Not_Grant', 'Not_Repaid'): 0.8
+            }
+        }
     }
+
 
     def __init__(self, reward_types, noise_level=0.05):
         self.noise_level = noise_level

@@ -11,7 +11,7 @@ criteria:
     Total_Profit: max
     Accuracy: max
     Unexploited_Profit: min
-    Total_loss: min
+    Total_Loss: min
 
   metrics_for_evaluation:
     - Demographic_Parity
@@ -20,7 +20,7 @@ criteria:
     - Total_Profit
     - Accuracy
     - Unexploited_Profit
-    - Total_loss
+    - Total_Loss
 
   ranking_weights:
     Demographic_Parity: 0.2

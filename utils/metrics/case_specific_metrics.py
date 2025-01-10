@@ -17,7 +17,9 @@ class LendingCaseMetrics:
         total_profit_partially_repaid = (self.suggestions_df.loc[granted_partially_repaid, 'Loan_Amount'] * 
                                          (self.suggestions_df.loc[granted_partially_repaid, 'Interest_Rate']) / 100).sum()
         
-        return total_profit_fully_repaid + total_profit_partially_repaid
+        total_potential_profit = (self.suggestions_df['Loan_Amount'] * self.suggestions_df['Interest_Rate'] / 100).sum()
+        
+        return (total_profit_fully_repaid + total_profit_partially_repaid)/total_potential_profit
 
     def compute_total_loss(self):
         granted_partially_repaid = (self.suggestions_df[self.decision_col] == 'Grant_lower') & (self.suggestions_df[self.true_outcome_col] == 'Partially_Repaid')
@@ -26,8 +28,10 @@ class LendingCaseMetrics:
         total_loss_partially_repaid = (self.suggestions_df.loc[granted_partially_repaid, 'Loan_Amount'] - 
                                        self.suggestions_df.loc[granted_partially_repaid, 'Recoveries']).sum()
         total_loss_not_repaid = self.suggestions_df.loc[granted_not_repaid, 'Loan_Amount'].sum()
+
+        total_potential_loss = self.suggestions_df['Loan_Amount'].sum() 
         
-        return total_loss_partially_repaid + total_loss_not_repaid
+        return (total_loss_partially_repaid + total_loss_not_repaid)/total_potential_loss
 
     def compute_unexploited_profit(self):
         not_granted_fully_repaid = (self.suggestions_df[self.decision_col] == 'Not_Grant') & (self.suggestions_df[self.true_outcome_col] == 'Fully_Repaid')
@@ -35,7 +39,9 @@ class LendingCaseMetrics:
         unexploited_profit = (self.suggestions_df.loc[not_granted_fully_repaid, 'Loan_Amount'] * 
                               self.suggestions_df.loc[not_granted_fully_repaid, 'Interest_Rate'] / 100).sum()
         
-        return unexploited_profit
+        total_potential_profit = (self.suggestions_df['Loan_Amount'] * self.suggestions_df['Interest_Rate'] / 100).sum()
+        
+        return unexploited_profit/total_potential_profit
 
     def compute_all_metrics(self):
         return {
@@ -74,7 +80,7 @@ class HealthCaseMetrics:
         total_samples = len(self.suggestions_df)
         total_treated = len(self.suggestions_df[self.suggestions_df[self.decision_col] == 'A'])
 
-        percentage_treated = (total_treated / total_samples) * 100
+        percentage_treated = (total_treated / total_samples) 
         return percentage_treated
 
 

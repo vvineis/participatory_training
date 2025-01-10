@@ -32,6 +32,10 @@ def save_results(cfg, cv_results, final_results, suggested_params_outcome, sugge
         f.write(f"Suggested Params Outcome: {suggested_params_outcome}\n")
         f.write(f"Suggested Params Reward: {suggested_params_reward}\n")
         f.write(f"Final Outcome Score: {final_outcome_score}\n")
+        f.write(f"Reward type: Strictest\n")
+        f.write(f"samples:{cfg.sample_size}\n")
+        f.write(f"cvfolds:{cfg.cv_splits}\n")
+        f.write(f"seed: 111\n")
 
 
     print(f"Results saved to: {result_subfolder}")

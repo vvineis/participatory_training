@@ -1,0 +1,7 @@
+Suggested Params Outcome: {'max_depth': 20, 'n_estimators': 300}
+Suggested Params Reward: {'max_depth': 10, 'n_estimators': 150}
+Final Outcome Score: 0.7443609022556391
+Reward type: Strictest
+samples:10000
+cvfolds:3
+seed: 42

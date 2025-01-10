@@ -1,0 +1,7 @@
+Suggested Params Outcome: {'max_depth': 20, 'n_estimators': 100}
+Suggested Params Reward: {'max_depth': 10, 'n_estimators': 150}
+Final Outcome Score: 0.7462406015037594
+Reward type: Baseline
+samples:5000
+cvfolds:5
+seed: Baseline
