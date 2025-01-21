@@ -1,9 +1,8 @@
 # Participatory Training Framework
 
-To set up your environment, follow these steps:
+To set up your environmentand run the experiments follow this steps:
 
-1. **Create a Conda Environment**
-   Run the following command to create a new Conda environment with Python 3.11.9:
+1. **Create a Conda Environment** 
    ```bash
    conda create --name PartTrainEnv python=3.11.9
 
@@ -15,10 +14,9 @@ To set up your environment, follow these steps:
     ```bash
     python main.py
 
-### Customizing Configurations
-To specify custom configurations, modify the parameters directly in the command. For example:
-    ```bash
-    python main.py use_case=lending cv_splits=5 sample_size=10000
+4. **Customizing experiments configuration** (example)
+   ```bash
+   python main.py use_case=lending cv_splits=5 sample_size=10000
 
 Refer to the configuration files for detailed information about the available parameters. 
 
