@@ -3,7 +3,7 @@ import pandas as pd
 
 class RewardCalculator:
     # Define base reward structures
-    '''REWARD_STRUCTURES = {
+    REWARD_STRUCTURES = {
         0: {  # Non-vulnerable applicants
             'Bank': {
                 ('Grant', 'Fully_Repaid'): 1.0,
@@ -74,7 +74,7 @@ class RewardCalculator:
                 ('Not_Grant', 'Not_Repaid'): 0.8
             }
         }
-    }'''
+    }
 
     '''REWARD_STRUCTURES = {
         0: {  # Non-vulnerable applicants
@@ -149,7 +149,7 @@ class RewardCalculator:
         }
     }'''
 
-    REWARD_STRUCTURES = {
+    '''REWARD_STRUCTURES = {
         0: {  # Non-vulnerable applicants
             'Bank': {
                 ('Grant', 'Fully_Repaid'): 1.0,
@@ -220,7 +220,7 @@ class RewardCalculator:
                 ('Not_Grant', 'Not_Repaid'): 0.8
             }
         }
-    }
+    }'''
 
 
     def __init__(self, reward_types, noise_level=0.05):

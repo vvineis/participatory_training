@@ -184,6 +184,7 @@ class SummaryProcessor:
         # Create summary DataFrame
         summary_df = self.create_summary_df(y_val_outcome, X_val_outcome,  treatment_val, decisions_df, unscaled_X_val_reward, expected_rewards_list, pred_list)
         
+        summary_df.head()
         # Calculate decision metrics using MetricsCalculator
         decision_metrics_df = self.metrics_to_dataframe(self.metrics_calculator.compute_all_metrics(summary_df, true_outcome_col='True Outcome'))
 
