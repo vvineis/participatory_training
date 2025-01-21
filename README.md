@@ -1,7 +1,5 @@
 # Participatory Training Framework
 
-## Setting Up the Environment
-
 To set up your environment, follow these steps:
 
 1. **Create a Conda Environment**
@@ -13,8 +11,7 @@ To set up your environment, follow these steps:
    ```bash
    pip install -r requirements.txt
 
-## Running the Code
-To run the experiments, use the following command:
+3. **Running the main code**
     ```bash
     python main.py
 
