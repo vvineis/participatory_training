@@ -6,6 +6,8 @@ from utils.rewards.get_rewards import RewardCalculator
 
 
 class MetricsCalculator:
+    """
+    This class computes all metrics for the decision suggestions output by the decision strategies"""
     def __init__(self, cfg):
         self.cfg = cfg  
 

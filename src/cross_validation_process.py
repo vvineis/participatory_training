@@ -1,3 +1,6 @@
+"""
+This module contains the CrossValidator class, which is responsible for executing the cross-validation process with hyperparameter tuning and decision processing.
+"""
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import ParameterGrid
@@ -14,6 +17,10 @@ from importlib import import_module
 import logging
 
 class CrossValidator:
+    '''
+    CrossValidator class is responsible for executing the cross-validation process with hyperparameter tuning
+    and decision summary.
+    '''
     def __init__(self, cfg, process_train_val_folds):
         self.cfg = cfg
         self.process_train_val_folds = process_train_val_folds
@@ -98,6 +105,7 @@ class CrossValidator:
     def tune_outcome_model(self, X_train, treatment_train, mu, y_train, X_val, treatment_val, y_val):
         """
         Tune the outcome model dynamically (with or without treatment).
+        Return the best hyperparameters, model, and score.
         """
         best_params, best_model, best_score = None, None, None
 
@@ -142,11 +150,15 @@ class CrossValidator:
             if (self.cfg.models.outcome.model_type == 'classification' and score > best_score) or \
             (self.cfg.models.outcome.model_type == 'causal_regression' and score < best_score):
                 best_score, best_params, best_model = score, params, outcome_model
-        print(f'Finale best model: {best_model}')
+        print(f'Final best model: {best_model}')
 
         return best_params, best_model, best_score
 
     def tune_reward_models(self, X_train, y_train_rewards, X_val, y_val_rewards):
+        """
+        Tune the reward models dynamically.
+        Return the best hyperparameters, models, and score.
+        """
         best_params, best_models, best_score = None, {}, float('inf')
 
         # Iterate through all parameter combinations in the grid
@@ -172,31 +184,11 @@ class CrossValidator:
                 best_models = trained_models
 
         return best_params, best_models, best_score
-
-
-    '''def tune_reward_models(self, X_train, y_train_bank, y_train_applicant, y_train_regulatory, 
-                           X_val, y_val_bank, y_val_applicant, y_val_regulatory):
-        best_params, best_models, best_score = None, None, float('inf')
-        for params in ParameterGrid(self.param_grid_reward):
-            print(f"Trying parameters for reward model: {params}")
-            
-            # Train reward models using RewardModel's train method
-            self.reward_model = RewardModels(self.regressor, **params)
-            # Train reward models using RewardModel's train method
-            bank_model, applicant_model, regulatory_model = self.reward_model.train(
-                X_train, y_train_bank, y_train_applicant, y_train_regulatory
-            )
-            
-            # Evaluate reward models using RewardModel's evaluate method
-            scores = self.reward_model.evaluate(X_val, y_val_bank, y_val_applicant, y_val_regulatory)
-            avg_mse = (scores['bank_mse'] + scores['applicant_mse'] + scores['regulatory_mse']) / 3
-            
-            if avg_mse < best_score:
-                best_score, best_params, best_models = avg_mse, params, (bank_model, applicant_model, regulatory_model)
-
-        return best_params, best_models, best_score'''
     
     def run(self):
+        """
+        Run the cross-validation process with hyperparameter tuning and decision summary.
+        """
         # List to store summary data for aggregation across folds
         all_fold_summaries = []
         all_fold_decision_metrics = []
@@ -246,8 +238,6 @@ class CrossValidator:
             
             # Get decisions from the decision processor
             all_expected_rewards, all_decisions, all_predictions, decisions_df = decision_processor.get_decisions(X_val_reward)
-            #print(decisions_df.head())
-            #print(decisions_df.columns)
 
             # Summarize and rank decision metrics for the current fold
             result = self.summary_processor.process_decision_metrics(
@@ -259,8 +249,6 @@ class CrossValidator:
                 expected_rewards_list=all_expected_rewards,
                 pred_list=all_predictions
             )
-           # print(f'summary_df {result['summary_df'].head()}, {lt['summary_df'].columns}')
-            #print(f'decision_metrics_df {result['decision_metrics_df'].head()}, {result['decision_metrics_df'].columns}')
 
             # Store fold results for later aggregation
             all_fold_summaries.append(result['summary_df'])

@@ -3,10 +3,10 @@ import random
 import numpy as np
 
 class SummaryProcessor:
+    """
+    Class to evaluate and rank the decision strategies and create a summary DataFrame.
+    """
     def __init__(self, cfg, metrics_calculator, strategy, seed=None):
-        """
-        Initialize the SummaryProcessor with necessary parameters, external objects, and the solution strategy.
-        """
         self.metrics_calculator = metrics_calculator
         self.ranking_criteria = cfg.criteria.ranking_criteria
         self.ranking_weights = dict(cfg.ranking_weights)
@@ -25,6 +25,9 @@ class SummaryProcessor:
 
 
     def create_summary_df(self, y_val_outcome, X_val_outcome, treatment_val, decisions_df, unscaled_X_val_reward, expected_rewards_list, pred_list):
+        """
+        Create a summary DataFrame with the feature context and suggested actions.
+        """
         # Unscaled feature context with true outcomes
         feature_context_df = unscaled_X_val_reward.copy()
         feature_context_df['True Outcome'] = y_val_outcome.values
@@ -50,9 +53,6 @@ class SummaryProcessor:
                 lambda row: row['True Outcome'] if row['Real Treatment'] == 'C' else row['C_predicted_outcome'], axis=1
             )
         
-            #print(summary_df[['Real Treatment', 'True Outcome', 'A_predicted_outcome', 'C_predicted_outcome', 'A_outcome', 'C_outcome']].head())
-
-
         # Initialize lists for suggested actions
         if self.model_type == 'classification':
             suggested_actions = {actor: [] for actor in self.reward_types + ['Oracle', 'Outcome_Pred_Model', 'Random']}
@@ -77,7 +77,6 @@ class SummaryProcessor:
                 exp_outcome = {action: value[0] for action, value in predicted_outcomes.items()}
                 # Determine the best action for Outcome_Pred_Model (e.g., minimize recovery time)
                 best_action = self._get_best_action_given_outcome(exp_outcome, obj='max')
-                #print(f'best_action {best_action}')
                 # Append the single best action for this row
                 suggested_actions['Outcome_Maxim'].append(best_action)
 
@@ -86,14 +85,12 @@ class SummaryProcessor:
 
         # Add suggested actions to summary DataFrame
         for actor, actions in suggested_actions.items():
-            #print(f"Actor: {actor}, Suggested Actions Length: {len(actions)}, Expected Length: {len(summary_df)}")
             summary_df[f'{actor} Suggested Action'] = actions
-        #print the first rows of the last ten columns of summary_df
-        print(f' summ_df: {summary_df.columns}')
         
         return summary_df
     
     def _map_outcome_to_action(self, outcome):
+        """Map the outcome to an action based on the mapping."""
         return self.mapping.get(outcome, self.mapping.get('default', 'Grant_lower'))
     
     def _get_random_action(self):
@@ -102,6 +99,7 @@ class SummaryProcessor:
         return random.choice(list(self.actions_set))
     
     def _get_best_action_given_outcome(self, recovery_times, obj='min'):
+        """Get the best action given the predicted outcomes"""
         if obj == 'min':
             # Find the minimum value
             min_value = min(recovery_times.values())

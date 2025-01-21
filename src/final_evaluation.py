@@ -1,3 +1,7 @@
+"""
+This module contains the functions to train final models on the entire training set and evaluate on the test set.
+"""
+
 from utils.models.outcome_model import OutcomeModel
 from utils.models.reward_models import RewardModels
 from utils.decisions.get_decisions import DecisionProcessor
@@ -17,6 +21,15 @@ def get_model_class(class_name):
     return getattr(module, class_name)
 
 def run_final_evaluation(data_processor, cv_results, all_train_set, test_set, cfg):
+    """
+    Train final models on the entire training set and evaluate on the test set.
+    :param data_processor: DataProcessor object.
+    :param cv_results: Cross-validation results.
+    :param all_train_set: Entire training set.
+    :param test_set: Test set.
+    :param cfg: Config object.
+    :return: Final evaluation results.
+    """
     # Prepare training and test sets
     reward_types= cfg.actors.reward_types
     final_training_data = data_processor.prepare_for_training(all_train_set, test_set)

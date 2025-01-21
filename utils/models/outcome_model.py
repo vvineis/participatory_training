@@ -8,6 +8,8 @@ from xgboost import XGBRegressor
 from sklearn.exceptions import ConvergenceWarning
 
 class OutcomeModel:
+    """
+    Class to train and evaluate an outcome prediction model."""
     def __init__(self, classifier, use_smote=True, smote_k_neighbors=1, smote_random_state=42,  model_random_state=111):
         print(f"Initializing OutcomeModel with classifier: {classifier.__class__.__name__}")
         self.classifier = classifier
@@ -43,6 +45,9 @@ class OutcomeModel:
         return accuracy
 
 class CausalOutcomeModel:
+    """
+    Class to train and evaluate a causal outcome model."""
+    
     def __init__(self, learner=None, control_name='C', random_state=4242):
         if learner is None:
             raise ValueError("Learner cannot be None for CausalOutcomeModel.")

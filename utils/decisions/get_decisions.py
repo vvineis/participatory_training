@@ -1,8 +1,10 @@
-
 import numpy as np
 import pandas as pd
 from utils.decisions.compromise_functions import*
 class DecisionProcessor:
+    """
+    Class to process decisions based on expected rewards and decision strategies.
+    """
     def __init__(self, outcome_model, reward_models, onehot_encoder, cfg):
         self.outcome_model = outcome_model
         self.reward_models = reward_models
@@ -105,6 +107,9 @@ class DecisionProcessor:
         return expected_rewards, predictions_list
 
     def get_decisions(self, X_val_or_test_reward):
+        """
+        Get decisions for the validation or test set based on expected rewards.
+        """
         all_expected_rewards = []
         all_decision_solutions = []
         all_clfr_preds = []
@@ -129,6 +134,9 @@ class DecisionProcessor:
         return all_expected_rewards, all_decision_solutions, all_clfr_preds, self._convert_decision_solutions_to_df(all_decision_solutions)
 
     def _convert_decision_solutions_to_df(self, all_decision_solutions):
+        """
+        Convert decision solutions to a DataFrame for easier inspection.
+        """
         rows = []
         for row_idx, decision_dict in enumerate(all_decision_solutions):
             for decision_type, solution in decision_dict.items():

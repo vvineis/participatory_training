@@ -1,13 +1,10 @@
 import numpy as np
 
 class FairnessMetrics:
+    """
+    Class to compute fairness metrics for decision suggestions.
+    """
     def __init__(self, cfg, suggestions_df, decision_col, outcome_col='True Outcome'):
-        """
-        :param cfg: Configuration containing model type, etc.
-        :param suggestions_df: DataFrame with columns for decisions and outcomes
-        :param decision_col: Column name for the model's predicted decisions
-        :param outcome_col: Column name for the true outcome labels or value 
-        """
         # Basic checks
         if decision_col not in suggestions_df.columns:
             raise ValueError(f"Column {decision_col} not found in the DataFrame")
@@ -46,6 +43,8 @@ class FairnessMetrics:
         return selected_metrics
     
     def _compute_demographic_parity(self):
+        """
+        Compute demographic parity"""
         df_pos = self.suggestions_df[self.suggestions_df[self.group_col] == self.positive_group_value]
         df_neg = self.suggestions_df[self.suggestions_df[self.group_col] != self.positive_group_value]
 
@@ -59,6 +58,8 @@ class FairnessMetrics:
         return dp_diff 
 
     def _compute_equal_opportunity(self):
+        """
+        Compute equal opportunity"""
         df_pos_outcome = self.suggestions_df[
             (self.suggestions_df[self.group_col] == self.positive_group_value) & 
             (self.suggestions_df[self.outcome_col] == self.positive_outcomes_set[0])
@@ -79,6 +80,8 @@ class FairnessMetrics:
 
 
     def _compute_cond_outcome_parity(self):
+        """
+        Compute conditional outcome parity"""
         pos_decision = self.positive_actions_set[0]
         df_pred_pos = self.suggestions_df[self.suggestions_df[self.decision_col] == pos_decision]
 

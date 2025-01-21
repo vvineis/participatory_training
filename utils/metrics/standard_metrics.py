@@ -2,6 +2,9 @@ from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_sc
 
 
 class StandardMetrics:
+    """
+    Class to compute standard metrics for classification and causal regression cases"""
+    
     def __init__(self, suggestions_df, decision_col, true_outcome_col=None, actions_set=None, outcomes_set=None, causal_reg_outcome_cols:list=None, model_type:str=None):
         """
         Initialize the class for both classification and causal regression evaluation.

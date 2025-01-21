@@ -20,8 +20,8 @@ To run the experiments, use the following command:
 
 ### Customizing Configurations
 To specify custom configurations, modify the parameters directly in the command. For example:
-     ```bash
-     python main.py use_case=lending cv_splits=5 sample_size=10000
+    ```bash
+    python main.py use_case=lending cv_splits=5 sample_size=10000
 
 Refer to the configuration files for detailed information about the available parameters. 
 

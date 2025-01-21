@@ -2,6 +2,7 @@
 PartTrainEnv/
 __pycache__
 .venv
-/outputs
 /multirun
 .vscode
+/outputs
+/results

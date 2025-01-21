@@ -1,3 +1,7 @@
+"""
+This module contains user-defined ranking criteria for the final evaluation of the models.
+It should be modified to adapt to new use cases."""
+
 def create_ranking_criteria():
     # Define ranking criteria
     ranking_criteria = {

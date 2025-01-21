@@ -1,3 +1,7 @@
+"""
+This module contains the DataProcessor Class to prepare data for training and evaluation.
+"""
+
 import pandas as pd
 from sklearn.model_selection import train_test_split, KFold
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
@@ -6,8 +10,10 @@ from hydra.utils import instantiate
 import warnings
 
 
-
 class DataProcessor:
+    """
+    DataProcessor class to prepare data.
+    """
     def __init__(self, df, cfg, random_split=True):
         self.cfg = cfg  
         self.df = df
@@ -26,7 +32,9 @@ class DataProcessor:
 
 
     def _split_data(self):
-        # Split data into training and testing sets
+        """
+        Split data into training and testing sets.
+        """
         if self.random_split:
             self.train_df, self.test_df = train_test_split(self.df, test_size=self.test_size, random_state=42)
         else:
@@ -36,19 +44,25 @@ class DataProcessor:
         self.kf = KFold(n_splits=self.n_splits, shuffle=True, random_state=42)
 
     def prepare_folds(self):
-        # Generate training-validation folds
+        """
+        Prepare training-validation folds.
+        """
         for train_index, val_index in self.kf.split(self.train_df):
             train_fold_df = self.train_df.iloc[train_index]
             val_fold_df = self.train_df.iloc[val_index]
             yield self.prepare_for_training(train_fold_df, val_fold_df)
 
     def prepare_for_training(self, train_df, val_df):
+        """
+        Prepare training and validation data for model training.
+        :param train_df: Training DataFrame.
+        :param val_df: Validation DataFrame.
+        :return: Dictionary containing training and validation data for outcome and reward prediction.
+        """
         # Process train and validation data for outcome and reward prediction
         train_df = self.scale_features(train_df)
         unscaled_val_or_test_df = val_df[self.columns_to_display].copy()
         
-    
-        #print(f"train_df_shape{train_df.shape}")
         val_or_test_df = self.scale_features(val_df, fit=False)
 
         # Prepare outcome prediction data
@@ -56,9 +70,7 @@ class DataProcessor:
         X_val_or_test_outcome, treatment_val_or_test, mu_val_or_test, y_val_or_test_outcome = self.prepare_for_outcome_prediction(val_or_test_df)
         # Prepare reward prediction data
         augmented_train_df = self.augment_train_for_reward(train_df)
-
         X_train_reward, y_train_rewards = self.prepare_for_reward_prediction(augmented_train_df)
-
         X_train_encoded, X_val_encoded = self.one_hot_encode(X_train_reward, val_or_test_df)
 
         # Combine features and encoded data for train and validation sets
@@ -115,26 +127,19 @@ class DataProcessor:
                 df.loc[:, non_binary_columns] = self.scaler.transform(df[non_binary_columns])
 
         return df
-    
-    '''def scale_features(self, df, fit=True):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=FutureWarning)
-
-            numeric_columns = df[self.feature_columns].select_dtypes(include=['int', 'float']).columns
-            if fit:
-                df.loc[:,  numeric_columns] = self.scaler.fit_transform(df[numeric_columns])
-            else:
-                df.loc[:,  numeric_columns] = self.scaler.transform(df[numeric_columns])
-        return df'''
 
     def one_hot_encode(self, train_df, val_df):
+        """
+        One-hot encode categorical columns.
+        :param train_df: Training DataFrame.
+        :param val_df: Validation DataFrame.
+        :return: Encoded training and validation DataFrames.
+        """
         # Fit OneHotEncoder on the training data
         train_df['Outcome'] = train_df['Outcome'].astype(str)
         val_df['Outcome'] = val_df['Outcome'].astype(str)
         print("Unique values in 'Action':", train_df['Action'].unique(), train_df['Action'].dtypes)
         print("Unique values in 'Outcome':", train_df['Outcome'].unique(), train_df['Outcome'].dtypes)
-        #check type of columns: 
-        print(train_df.dtypes)
         self.onehot_encoder.fit(train_df[['Action', 'Outcome']])
 
         # Transform the train and validation sets
@@ -155,6 +160,7 @@ class DataProcessor:
         Augment training data for reward calculation with a unified strategy.
         Each row is augmented with all possible actions from 'actions_set',
         excluding the existing action in the row.
+        :return: Augmented DataFrame.
         """
         augmented_rows = []
 
@@ -197,7 +203,8 @@ class DataProcessor:
     def prepare_for_outcome_prediction(self, df):
         """
         Prepare features (X), target (y), and treatment column (conditionally).
-        The 'Action' column is included only for the health use case.
+        :param df: DataFrame to process.
+        :return: Features, treatment and target columns.
         """
         X = df[self.feature_columns]  # Use configured feature columns
         y = df['Outcome']
@@ -212,7 +219,12 @@ class DataProcessor:
         return X, treatment, mu,y
 
     def prepare_for_reward_prediction(self, df):
-        reward_features = self.feature_columns + self.categorical_columns #['Income', 'Credit_Score', 'Loan_Amount', 'Interest_Rate', 'Action', 'Outcome']
+        """
+        Prepare features (X) and target (y) for reward prediction.
+        :param df: DataFrame to process.
+        :return: Features and target
+        """
+        reward_features = self.feature_columns + self.categorical_columns 
         X = df[reward_features]
         
         # Dynamically retrieve reward columns based on self.reward_types

@@ -7,10 +7,8 @@ from src.cross_validation_process import CrossValidator
 from src.final_evaluation import run_final_evaluation
 from hydra.utils import instantiate
 import os
-
-import os
 import time
-from omegaconf import OmegaConf
+
 
 def save_results(cfg, cv_results, final_results, suggested_params_outcome, suggested_params_reward, final_outcome_score):
     # Create a unique folder for each run
@@ -54,15 +52,8 @@ def main(cfg: DictConfig):
 
     print(f"Initialized Reward Calculator: {reward_calculator}")
     df_ready = reward_calculator.compute_rewards(df)
-
-    ranking_criteria = cfg.criteria.ranking_criteria
-
-    metrics_for_evaluation = cfg.criteria.metrics_for_evaluation
-    ranking_weights = cfg.ranking_weights
-    #print("Decision Criteria:", cfg.decision_criteria)
-
-    print("Ranking Weights:", ranking_weights)
     
+    # Process data
     data_processor = DataProcessor(
         df=df_ready,
         cfg= cfg, 
@@ -73,6 +64,7 @@ def main(cfg: DictConfig):
     print("Train set shape:", all_train_set.shape)
     print("Test set shape:", test_set.shape)
 
+    # Cross-validation for HPO and decision strategies assessment and ranking
     cross_validator = CrossValidator(
         cfg=cfg,
         process_train_val_folds=process_train_val_folds
@@ -86,18 +78,16 @@ def main(cfg: DictConfig):
     print("Aggregated CV Results:")
     print(cv_results)
 
+    # Train final models on entire training set and evaluate on test set
     print("Training final models on entire training set and evaluating on test set...")
     final_results, suggested_params_outcome, suggested_params_reward, final_outcome_score = run_final_evaluation(data_processor, cv_results, all_train_set, test_set,  cfg)
     print("Final evaluation results:")
     print(final_results)
-
+    
+    # Save results
     os.makedirs(cfg.result_path, exist_ok=True)
 
     save_results(cfg, cv_results, final_results, suggested_params_outcome, suggested_params_reward, final_outcome_score)
-
-    # Save results to the specified directory
-    #cv_results['ranked_decision_metrics_df'].to_csv(os.path.join(cfg.result_path, 'cv_ranked_decision_metrics.csv'), index=False)
-    #final_results['ranked_decision_metrics_df'].to_csv(os.path.join(cfg.result_path, 'final_ranked_decision_metrics.csv'), index=False)
 
     print(f"Results saved to the '{cfg.result_path}' folder")
 

@@ -63,11 +63,11 @@ models:
     model_type: classification
     model_class: OutcomeModel
     classifier:
-      _target_: sklearn.ensemble.RandomForestClassifier
+      _target_: sklearn.neighbors.KNeighborsClassifier #sklearn.ensemble.RandomForestClassifier
     param_grid:
       n_neighbors: [3, 5, 10]
-      n_estimators: [100, 200, 300]
-      max_depth: [null, 10, 20]
+      #n_estimators: [100, 200, 300]
+      #max_depth: [null, 10, 20]
 
   rewards:
     regressor:

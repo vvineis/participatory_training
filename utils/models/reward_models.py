@@ -1,8 +1,10 @@
-
 from sklearn.metrics import mean_squared_error
 from sklearn.base import clone
 
 class RewardModels:
+    """
+    Class to train and evaluate the reward models for each reward type.
+    """
     def __init__(self, regressor_class, reward_types, **regressor_params):
 
         self.reward_types = reward_types

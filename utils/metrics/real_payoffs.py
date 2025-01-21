@@ -1,5 +1,7 @@
 import numpy as np
 class RealPayoffMetrics:
+    """
+    This class calculates the real payoff of the actors, according to the decision suggestions"""
     def __init__(self, cfg, suggestions_df, decision_col, true_outcome_col, reward_actor, reward_structures):
         if decision_col not in suggestions_df.columns or true_outcome_col not in suggestions_df.columns:
             raise ValueError(f"Columns {decision_col} or {true_outcome_col} not found in the DataFrame")

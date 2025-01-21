@@ -1,5 +1,13 @@
+"""
+This module contains classes to compute case-specific metrics for the lending and healthcare use cases.
+These Classes should be modified to adapt to new use cases.
+"""
+
 import pandas as pd
 class LendingCaseMetrics:
+    """
+    Class to compute case-specific metrics for the lending use case.
+    """
     def __init__(self, suggestions_df, decision_col, true_outcome_col, cfg=None):
         if decision_col not in suggestions_df.columns or true_outcome_col not in suggestions_df.columns:
             raise ValueError(f"Columns {decision_col} or {true_outcome_col} not found in the DataFrame")
@@ -67,6 +75,9 @@ class LendingCaseMetrics:
         return selected_metrics
 
 class HealthCaseMetrics:
+    """
+    Class to compute case-specific metrics for the healthcare use case.
+    """
     def __init__(self, suggestions_df, decision_col, true_outcome_col, cfg):
         if decision_col not in suggestions_df.columns or true_outcome_col not in suggestions_df.columns:
             raise ValueError(f"Columns {decision_col} or {true_outcome_col} not found in the DataFrame")

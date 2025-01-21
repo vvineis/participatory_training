@@ -1,8 +1,12 @@
+"""
+This module contains the implementation of the decision-making strategies to suggest actions based on expected rewards.
+"""
+
 from abc import ABC, abstractmethod
 import numpy as np
 from math import prod
 
-# Abstract Base Class for Solution Strategies
+
 class SolutionStrategy(ABC):
     @abstractmethod
     def compute(self, expected_rewards, disagreement_point, ideal_point, all_actions):
